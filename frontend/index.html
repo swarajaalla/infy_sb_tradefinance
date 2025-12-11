@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trade Finance – Milestone 1</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2>Trade Finance Blockchain Explorer</h2>
+
+<div class="box">
+    <h3>Register</h3>
+    <input id="r_username" placeholder="Username">
+    <input id="r_password" type="password" placeholder="Password">
+    <input id="r_role" placeholder="Role (Importer / Exporter / Bank)">
+    <input id="r_org" placeholder="Organization Name">
+    <button onclick="register()">Register</button>
+    <p id="register_result"></p>
+</div>
+
+<div class="box">
+    <h3>Login</h3>
+    <input id="l_username" placeholder="Username">
+    <input id="l_password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="login_result"></p>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
