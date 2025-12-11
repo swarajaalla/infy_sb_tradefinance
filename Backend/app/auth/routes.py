@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from app.database import get_db
-from app.models import User
-from app.schema import UserCreate, LoginRequest, TokenResponse
+from app.models import *
+from app.schema import *
 from app.auth.jwt_handler import create_access_token, create_refresh_token
+from app.auth.dependencies import get_current_user
+
 
 router = APIRouter(prefix="/auth")
 
@@ -12,6 +14,11 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.post("/register")
 def register_user(data: UserCreate, db: Session = Depends(get_db)):
+    # Check if user exists
+    existing_user = db.query(User).filter(User.email == data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+
     hashed = pwd_context.hash(data.password)
 
     new_user = User(
@@ -37,7 +44,16 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 
     payload = {"user_id": user.id, "role": user.role.value}
 
-    return TokenResponse(
-        access_token=create_access_token(payload),
-        refresh_token=create_refresh_token(payload)
-    )
+    return {
+        "access_token": create_access_token(payload),
+        "refresh_token": create_refresh_token(payload),
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role.value,
+            "org_name": user.org_name,
+        }
+    }
+
