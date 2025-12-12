@@ -25,7 +25,4 @@ app.include_router(docs_router)
 def home():
     return {"message": "Backend Working Successfully 🚀"}
 
-@app.get("/admin/dashboard")
-def admin_dashboard(user=Depends(role_required(["admin"]))):
-    return {"message": f"Welcome {user.name}, you are an admin!"}
 

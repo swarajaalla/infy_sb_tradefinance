@@ -56,7 +56,6 @@ export default function Register() {
           className="w-full border p-2 rounded"
           onChange={(e) => setForm({ ...form, role: e.target.value })}
           value={form.role}
-          required
         >
           <option value="" disabled>
             Select Role

@@ -51,6 +51,7 @@ class DocumentResponse(BaseModel):
     doc_number: str
     file_url: str
     hash: str
+    org_name: str
     issued_at: datetime | None
     created_at: datetime
 

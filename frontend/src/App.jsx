@@ -1,57 +1,53 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AdminDashboard from "./pages/AdminDashboard";
-import BankDashboard from "./pages/BankDashboard";
-import CorporateDashboard from "./pages/CorporateDashboard";
-import AuditorDashboard from "./pages/AuditorDashboard";
+
+import Dashboard from "./pages/Dashboard";
+import Documents from "./pages/Documents";
+import AdminUsers from "./pages/AdminUsers";
+
 import ProtectedRoute from "./components/ProtectedRoute";
-import Unauthorized from "./pages/Unauthorized";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
+
         <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes */}
+        {/* Role Dashboards */}
         <Route
           path="/admin/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/bank/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={["bank","admin"]}>
-              <BankDashboard />
-            </ProtectedRoute>
-          }
+          element={<ProtectedRoute><Dashboard role="admin" /></ProtectedRoute>}
         />
         <Route
           path="/corporate/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={["corporate","admin"]}>
-              <CorporateDashboard />
-            </ProtectedRoute>
-          }
+          element={<ProtectedRoute><Dashboard role="corporate" /></ProtectedRoute>}
+        />
+        <Route
+          path="/bank/dashboard"
+          element={<ProtectedRoute><Dashboard role="bank" /></ProtectedRoute>}
         />
         <Route
           path="/auditor/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={["auditor","admin"]}>
-              <AuditorDashboard />
-            </ProtectedRoute>
-          }
+          element={<ProtectedRoute><Dashboard role="auditor" /></ProtectedRoute>}
         />
 
-        {/* Unauthorized page */}
-        <Route path="/unauthorized" element={<Unauthorized />} />
+        {/* Shared Pages */}
+        <Route
+          path="/documents"
+          element={<ProtectedRoute><Documents /></ProtectedRoute>}
+        />
+
+        {/* Admin Only */}
+        <Route
+          path="/admin/users"
+          element={<ProtectedRoute><AdminUsers /></ProtectedRoute>}
+        />
+
       </Routes>
     </BrowserRouter>
   );
