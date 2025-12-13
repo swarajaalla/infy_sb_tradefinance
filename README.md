@@ -190,7 +190,6 @@ This project was developed as a **group project** under the **Infosys Springboar
 ## 🔮 Future Enhancements
 
 * File upload with automatic hash generation
-* Refresh token implementation
 * Organisation-wise analytics dashboard
 * Audit logs for document access
 * Blockchain integration for immutable document storage
