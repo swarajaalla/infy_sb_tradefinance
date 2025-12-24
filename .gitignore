@@ -16,3 +16,5 @@ dist/
 
 # VS Code
 .vscode/
+
+backend/uploads/

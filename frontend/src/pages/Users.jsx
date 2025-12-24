@@ -7,21 +7,17 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
 
+  const role = user?.role?.toLowerCase();
+
   useEffect(() => {
-    if (!user) return;
-
-    const role = user.role?.toLowerCase();
-
-    if (role === "admin" || role === "auditor") {
+    if (role === "admin") {
       api.get("/users/")
         .then((res) => setUsers(res.data))
         .catch(() => setError("Failed to load users"));
     }
-  }, [user]);
+  }, [role]);
 
-  const role = user?.role?.toLowerCase();
-
-  if (role !== "admin" && role !== "auditor") {
+  if (role !== "admin") {
     return <div className="p-6 text-red-600">Access denied</div>;
   }
 

@@ -8,7 +8,7 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    role: "bank",
+    role: "",
     org_name: "",
   });
 
@@ -36,15 +36,17 @@ const Register = () => {
         <input type="password" className="border p-2 w-full" placeholder="Password"
           onChange={(e) => setForm({ ...form, password: e.target.value })} />
 
-        <select 
-          className="border p-2 w-full"
-          onChange={(e) => setForm({ ...form, role: e.target.value })}
+        <select
+        className="border p-2 w-full"  value={form.role}
+        onChange={(e) => setForm({ ...form, role: e.target.value })}
         >
-          <option value="" disabled selected>Select Role</option>
-          <option value="bank">Bank</option>
+          <option value="" disabled>Select Role</option>
+          <option value="bank">Bank</option>.
           <option value="corporate">Corporate</option>
           <option value="auditor">Auditor</option>
         </select>
+
+
 
         <input className="border p-2 w-full" placeholder="Organisation"
           onChange={(e) => setForm({ ...form, org_name: e.target.value })} />

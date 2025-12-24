@@ -1,90 +1,85 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlmodel import Session
+from datetime import datetime
+import hashlib, os, uuid
 
 from ..database import get_session
 from ..models import User, Role
-from ..schemas import DocumentCreate, DocumentRead
+from ..schemas import DocumentRead
 from ..auth import get_current_user
 from .. import crud
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
-
-def _normalize_role(role_value) -> str:
-    """
-    Accepts a Role enum or a string and returns a normalized lowercase string.
-    """
-    if hasattr(role_value, "value"):
-        rv = role_value.value
-    else:
-        rv = str(role_value or "")
-    return rv.lower().strip()
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-# CREATE — POST /documents/create
+def compute_sha256(file: UploadFile) -> str:
+    sha = hashlib.sha256()
+    file.file.seek(0)
+    for chunk in iter(lambda: file.file.read(4096), b""):
+        sha.update(chunk)
+    file.file.seek(0)
+    return sha.hexdigest()
+
+
 @router.post(
-    "/create",
-    response_model=dict,  # returns {"message": str, "document": DocumentRead}
+    "/upload",
     status_code=status.HTTP_201_CREATED,
-    summary="Create Document",
 )
-def create_document(
-    payload: DocumentCreate,
+def upload_document(
+    doc_type: str = Form(...),
+    doc_number: str = Form(...),
+    issued_at: datetime = Form(...),
+    file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    """
-    Any logged-in user can create a document **except auditors**.
-    Allowed roles: admin, bank, corporate.
-    """
-
-    role_val = _normalize_role(getattr(current_user, "role", ""))
-
-    # Allowed roles for creation
-    allowed = {Role.admin.value, Role.bank.value, Role.corporate.value}
-    # ensure allowed set contains lowercase strings
-    allowed = {a.lower().strip() for a in allowed}
-
-    if role_val not in allowed:
-        # explicit 403 for auditors and any other non-allowed roles
+    # Only Corporate
+    if current_user.role != Role.corporate.value:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admin, bank and corporate users can create documents",
+            status_code=403,
+            detail="Only corporate users are allowed to upload trade documents",
         )
+
+    file_hash = compute_sha256(file)
+
+    ext = os.path.splitext(file.filename)[1]
+    filename = f"{uuid.uuid4()}{ext}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    with open(file_path, "wb") as f:
+        f.write(file.file.read())
+
+    file_url = f"/uploads/{filename}"
 
     doc = crud.create_document(
         session=session,
-        title=payload.title,
-        description=payload.description,
-        doc_type=payload.doc_type,
-        doc_number=payload.doc_number,
-        file_url=payload.file_url,
-        hash_value=payload.hash,
+        doc_type=doc_type,
+        doc_number=doc_number,
+        file_url=file_url,
+        hash_value=file_hash,
+        issued_at=issued_at,
         owner=current_user,
     )
 
-    return {"message": "Document created successfully", "document": doc}
+    return {"message": "Document uploaded successfully"}
 
-
-# LIST — GET /documents/list
-@router.get("/list", response_model=list[DocumentRead], summary="List Documents")
+@router.get("/list", response_model=list[DocumentRead])
 def list_documents(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    """
-    - Admin & Auditor: see all documents
-    - Others: only documents from their own org
-    """
-    role_val = _normalize_role(getattr(current_user, "role", ""))
+    role = current_user.role
 
-    if role_val in {Role.admin.value.lower(), Role.auditor.value.lower()}:
+    if role == Role.auditor.value:
         return crud.list_all_documents(session)
 
-    if not current_user.org_name:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User has no organisation assigned",
-        )
+    if role in {Role.bank.value, Role.corporate.value}:
+        return crud.list_documents_for_org(session, current_user.org_name)
 
-    return crud.list_documents_for_org(session, current_user.org_name)
+    raise HTTPException(
+        status_code=403,
+        detail="You are not authorized to view trade documents",
+    )

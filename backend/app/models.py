@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional
 
 from sqlmodel import SQLModel, Field
-from sqlalchemy import Column, DateTime, Enum as SAEnum
+from sqlalchemy import Column, DateTime
 
 
 class Role(str, Enum):
@@ -12,6 +12,7 @@ class Role(str, Enum):
     auditor = "auditor"
     admin = "admin"
 
+
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
@@ -19,30 +20,30 @@ class User(SQLModel, table=True):
     name: str
     email: str
     hashed_password: str
-    role: str  # better: Role enum, but ensure consistent usage
+    role: str
     refresh_token: Optional[str] = Field(default=None, nullable=True)
     org_name: Optional[str] = None
-    created_at: datetime = Field(sa_column=Column(DateTime, nullable=False, default=datetime.utcnow))
+    created_at: datetime = Field(
+        sa_column=Column(DateTime, nullable=False, default=datetime.utcnow)
+    )
+
 
 class Document(SQLModel, table=True):
     __tablename__ = "documents"
 
     id: Optional[int] = Field(default=None, primary_key=True)
 
-    # required fields
-    title: str = Field(nullable=False)
-    description: Optional[str] = None
-    doc_type: Optional[str] = None
-    doc_number: Optional[str] = None
-    file_url: Optional[str] = None
-    hash: Optional[str] = None
-
-    owner_id: int = Field(nullable=False)   # link to users.id
+    owner_id: int = Field(nullable=False)
     org_name: Optional[str] = None
 
+    doc_type: str = Field(nullable=False)
+    doc_number: str = Field(nullable=False)
+
+    file_url: str = Field(nullable=False)
+    hash: str = Field(nullable=False)
+
+    issued_at: datetime = Field(nullable=False)
+
     created_at: datetime = Field(
-        sa_column=Column(DateTime, nullable=False, default=datetime.utcnow)
-    )
-    updated_at: datetime = Field(
         sa_column=Column(DateTime, nullable=False, default=datetime.utcnow)
     )
