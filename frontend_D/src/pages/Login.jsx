@@ -1,80 +1,87 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
 
-    // IMPORTANT: FormData (NOT JSON)
+    // Backend expects FormData
     const formData = new FormData();
     formData.append("username", username);
     formData.append("password", password);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/login", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await api.post("/auth/login", formData);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.detail || "Login failed");
-        return;
-      }
+      const token = res.data.access_token;
 
       // Save token
-      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("token", token);
 
-      // Decode role from JWT payload
-      const payload = JSON.parse(atob(data.access_token.split(".")[1]));
-      localStorage.setItem("role", payload.role);
+      // Decode JWT payload
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const role = payload.role;
+
+      localStorage.setItem("role", role);
 
       // Role-based redirect
-      if (payload.role === "admin") {
+      if (role === "admin") {
         navigate("/admin");
-      } else if (payload.role === "corporate") {
+      } else if (role === "corporate") {
         navigate("/corporate");
-      } else if (payload.role === "bank") {
+      } else if (role === "bank") {
         navigate("/bank");
-      } else if (payload.role === "auditor") {
+      } else if (role === "auditor") {
         navigate("/auditor");
-      }
-      else {
+      } else {
         navigate("/");
       }
 
     } catch (err) {
-      console.error(err);
-      alert("Server error");
+      setError(err.response?.data?.detail || "Login failed");
     }
   };
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h1>Login</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <form
+        onSubmit={handleLogin}
+        className="bg-white p-6 rounded shadow-md w-96"
+      >
+        <h2 className="text-xl font-bold mb-4 text-center">Login</h2>
 
-      <form onSubmit={handleLogin}>
+        {error && <p className="text-red-500 mb-3">{error}</p>}
+
         <input
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+          required
         />
-        <br /><br />
 
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+          required
         />
-        <br /><br />
 
-        <button type="submit">Login</button>
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+        >
+          Login
+        </button>
       </form>
     </div>
   );

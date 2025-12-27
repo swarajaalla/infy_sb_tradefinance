@@ -7,7 +7,9 @@ import AdminDashboard from "./pages/dashboards/AdminDashboard";
 import CorporateDashboard from "./pages/dashboards/CorporateDashboard";
 import BankDashboard from "./pages/dashboards/BankDashboard";
 import AuditorDashboard from "./pages/dashboards/AuditorDashboard";
-
+import DocumentUpload from "./pages/DocumentUpload";
+import DocumentsList from "./pages/DocumentsList";
+import LedgerExplorer from "./pages/LedgerExplorer";
 export default function App() {
   return (
     <>
@@ -26,6 +28,9 @@ export default function App() {
       <Route path="/corporate" element={<CorporateDashboard />} />
       <Route path="/bank" element={<BankDashboard />} />
       <Route path="/auditor" element={<AuditorDashboard />} />
+      <Route path="/upload" element={<DocumentUpload />} />
+      <Route path="/documents" element={<DocumentsList />} />
+      <Route path="/ledger/:documentId" element={<LedgerExplorer />} />
     </Routes>
     </div>
     </>
