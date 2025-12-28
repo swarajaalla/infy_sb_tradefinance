@@ -41,9 +41,12 @@ class LoginRequest(BaseModel):
 
 
 class Token(BaseModel):
+    message: str
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+    
+    
 
 
 # ---------- DOCUMENT ----------
@@ -67,3 +70,25 @@ class DocumentRead(BaseModel):
 
 for k, v in _make_config().items():
     setattr(DocumentRead, k, v)
+
+
+class LedgerCreate(BaseModel):
+    document_id: int
+    event_type: str
+    description: Optional[str] = None
+    hash_before: Optional[str] = None
+    hash_after: Optional[str] = None
+
+
+class LedgerRead(BaseModel):
+    id: int
+    document_id: int
+    event_type: str
+    description: Optional[str]
+    hash_before: Optional[str]
+    hash_after: Optional[str]
+    timestamp: datetime
+
+
+for k, v in _make_config().items():
+    setattr(LedgerRead, k, v)

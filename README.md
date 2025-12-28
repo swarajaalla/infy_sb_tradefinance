@@ -2,9 +2,9 @@
 
 ## 📌 Project Overview
 
-The **Trade Finance Blockchain Explorer** is a full-stack web application developed to digitally manage and track **trade finance documents** such as Letters of Credit, Invoices, Bills of Lading, and Insurance Certificates in a **secure and transparent manner**.
+The **Trade Finance Blockchain Explorer** is a full-stack web application designed to digitally manage and track **trade finance documents** such as **Letters of Credit, Invoices, Bills of Lading, and Purchase Orders** in a **secure, transparent, and auditable** manner.
 
-The application focuses on **document integrity**, **role-based access control**, and **organisation-level visibility**, making trade finance processes more reliable and auditable.
+The system ensures **document integrity** using cryptographic hash values and maintains an **immutable audit trail (ledger)** of all important actions like upload, access, verification, and modification.
 
 This project is developed as part of the **Infosys Springboard Virtual Internship 6.0**.
 
@@ -12,11 +12,12 @@ This project is developed as part of the **Infosys Springboard Virtual Internshi
 
 ## 🎯 Project Objectives
 
-* To digitize trade finance document management
-* To ensure document integrity using hash values
-* To implement secure authentication and authorization
-* To provide role-based and organisation-based access
-* To improve transparency and auditability in trade finance workflows
+* Digitize trade finance document management
+* Ensure document integrity using SHA-256 hash values
+* Implement secure authentication and authorization
+* Enforce role-based and organisation-based access
+* Maintain an audit trail for transparency and compliance
+* Provide a simple blockchain-inspired ledger view
 
 ---
 
@@ -29,18 +30,28 @@ This project is developed as part of the **Infosys Springboard Virtual Internshi
 
 * 📄 **Document Management**
 
-  * Create and view trade finance documents
-  * Store document metadata and hash values
+  * Upload and update trade finance documents
+  * Automatic hash generation for each document
   * Organisation-specific document visibility
+
+* 🧾 **Ledger / Audit Trail**
+
+  * Immutable log of all document events:
+
+    * UPLOADED
+    * ACCESSED
+    * VERIFIED
+    * MODIFIED
+  * Viewable only by auditors
 
 * 👥 **User Management**
 
-  * Admin and Auditor can view all users
-  * Other roles have restricted access
+  * Admin can view all users
+  * Role and organisation assigned to each user
 
 * 📊 **Dashboard**
 
-  * Displays logged-in user details such as role and organisation
+  * Displays logged-in user role and organisation details
 
 ---
 
@@ -66,12 +77,12 @@ This project is developed as part of the **Infosys Springboard Virtual Internshi
 
 ## 🔑 User Roles & Access Control
 
-| Role      | Access Level                          |
-| --------- | ------------------------------------- |
-| Admin     | Full access to users and documents    |
-| Auditor   | Read-only access across organisations |
-| Bank      | Access limited to own organisation    |
-| Corporate | Access limited to own organisation    |
+| Role          | Permissions                                       |
+| ------------- | ------------------------------------------------- |
+| **Admin**     | View all users, manage system                     |
+| **Auditor**   | Read-only access to all documents and full ledger |
+| **Bank**      | View documents belonging to own organisation      |
+| **Corporate** | Upload and update documents for own organisation  |
 
 ---
 
@@ -85,6 +96,10 @@ project-root/
 │   │   ├── crud.py
 │   │   ├── models.py
 │   │   ├── schemas.py
+│   │   ├── routers/
+│   │   │   ├── documents.py
+│   │   │   ├── ledger.py
+│   │   │   └── users.py
 │   │   └── main.py
 │   └── requirements.txt
 │
@@ -96,7 +111,7 @@ project-root/
 │   │   ├── pages/
 │   │   ├── App.jsx
 │   │   └── main.jsx
-│   └── README.md
+│   └── package.json
 │
 └── README.md
 ```
@@ -119,6 +134,12 @@ Backend runs at:
 
 ```
 http://127.0.0.1:8000
+```
+
+Swagger UI:
+
+```
+http://127.0.0.1:8000/docs
 ```
 
 ---
@@ -147,8 +168,7 @@ http://localhost:5173
 VITE_API_URL=http://127.0.0.1:8000
 ```
 
-⚠️ The `.env` file is **not committed** to GitHub for security reasons.
-This value is only an example for local development.
+⚠️ This file is not committed to GitHub for security reasons.
 
 ---
 
@@ -156,11 +176,9 @@ This value is only an example for local development.
 
 ```json
 {
-  "title": "Invoice for Textile Export",
-  "description": "Commercial invoice for cotton textile export",
-  "doc_type": "Invoice",
+  "doc_type": "INVOICE",
   "doc_number": "INV-2025-001",
-  "file_url": "https://example.com/invoice.pdf",
+  "issued_at": "2025-12-20",
   "hash": "a94a8fe5ccb19ba61c4c0873d391e987"
 }
 ```
@@ -169,7 +187,8 @@ This value is only an example for local development.
 
 ## 👥 Project Team
 
-This project was developed as a **group project** under the **Infosys Springboard Virtual Internship 6.0**.
+This project was developed as a **group project** under the
+**Infosys Springboard Virtual Internship 6.0**.
 
 * **Group Name:** Group C
 * **Team Size:** 6 Members
@@ -189,17 +208,17 @@ This project was developed as a **group project** under the **Infosys Springboar
 
 ## 🔮 Future Enhancements
 
-* File upload with automatic hash generation
-* Refresh token implementation
+* Blockchain network integration for true immutability
+* Refresh token support
 * Organisation-wise analytics dashboard
-* Audit logs for document access
-* Blockchain integration for immutable document storage
+* Advanced audit reports
+* File version comparison
+* Download and export ledger reports
 
 ---
 
 ## 🏁 Conclusion
 
-The **Trade Finance Blockchain Explorer** demonstrates a **secure, scalable, and role-based document management system** that aligns with real-world enterprise trade finance requirements and industry best practices.
+The **Trade Finance Blockchain Explorer** provides a **secure, role-based, and auditable document management platform** inspired by blockchain principles. It demonstrates how modern web technologies can be applied to solve real-world trade finance challenges with transparency and trust.
 
 ---
-

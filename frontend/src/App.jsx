@@ -6,6 +6,8 @@ import Users from "./pages/Users";
 import Documents from "./pages/Documents";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Layout from "./components/Layout";
+import Ledger from "./pages/Ledger";
+
 
 const App = () => {
   return (
@@ -45,6 +47,18 @@ const App = () => {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/ledger"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Ledger />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
 
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

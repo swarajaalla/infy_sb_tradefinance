@@ -6,7 +6,7 @@ from sqlmodel import Session
 from .database import get_session
 from . import schemas, crud
 from .auth import create_access_token, create_refresh_token, verify_password
-from .routers import users, documents
+from .routers import users, documents, ledger
 
 app = FastAPI(title="Trade Finance Backend")
 
@@ -74,6 +74,7 @@ def login(
     refresh_token = create_refresh_token(payload)
 
     return schemas.Token(
+        message="Login successful",
         access_token=access_token,
         refresh_token=refresh_token,
     )
@@ -84,3 +85,5 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.include_router(auth_router)
 app.include_router(users.router)
 app.include_router(documents.router)
+app.include_router(ledger.router)
+

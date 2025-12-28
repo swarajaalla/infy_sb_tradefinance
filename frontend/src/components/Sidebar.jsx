@@ -28,6 +28,12 @@ const Sidebar = () => {
             Users
           </Link>
         )}
+
+        {user.role === "auditor" && (
+          <Link to="/ledger" className="block hover:text-blue-400">
+            Ledger
+          </Link>
+        )}
       </nav>
 
       <div className="mt-10 border-t pt-4 text-sm">
