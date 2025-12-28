@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-python-dotenv
-psycopg2
-sqlalchemy
-passlib[bcrypt]
-python-jose[cryptography]
