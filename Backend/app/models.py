@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey, TIMESTAMP, func
+from sqlalchemy import Column, Integer, String, Enum, ForeignKey, TIMESTAMP, func, JSON
 from datetime import datetime
 from .database import Base
 import enum
@@ -44,3 +44,29 @@ class Document(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     owner = relationship("User")
+
+class LedgerAction(enum.Enum):
+    ISSUED = "ISSUED"
+    AMENDED = "AMENDED"
+    SHIPPED = "SHIPPED"
+    RECEIVED = "RECEIVED"
+    PAID = "PAID"
+    CANCELLED = "CANCELLED"
+    VERIFIED = "VERIFIED"
+
+class LedgerEntry(Base):
+    __tablename__ = "ledger_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
+    action = Column(Enum(LedgerAction), nullable=False)
+    actor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    meta_data = Column(JSON, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    document = relationship("Document")
+    actor = relationship("User")
+
+class UpdateMode(str, Enum):
+    overwrite = "overwrite"
+    append = "append"

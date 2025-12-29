@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 
-export default function Layout({ children, role }) {
+export default function Layout({ children }) {
   const navigate = useNavigate();
+  const role = localStorage.getItem("role");
 
   const logout = () => {
     localStorage.clear();
@@ -10,29 +11,40 @@ export default function Layout({ children, role }) {
 
   return (
     <div className="flex h-screen bg-gray-100">
-
       {/* Sidebar */}
       <aside className="w-64 bg-blue-700 text-white flex flex-col">
         <div className="p-6 text-2xl font-bold">Trade Explorer</div>
 
         <nav className="flex-1 px-4 space-y-3">
-
-          <Link to={`/${role}/dashboard`} className="block p-2 hover:bg-blue-800 rounded">
+          <Link
+            to={`/${role}/dashboard`}
+            className="block p-2 hover:bg-blue-800 rounded"
+          >
             Dashboard
           </Link>
 
-          {(role === "admin" || role === "auditor" || role === "corporate" || role === "bank") && (
-            <Link to="/documents" className="block p-2 hover:bg-blue-800 rounded">
-              Documents
-            </Link>
-          )}
+          <Link
+            to="/documents"
+            className="block p-2 hover:bg-blue-800 rounded"
+          >
+            Documents
+          </Link>
+
+          <Link
+            to="/ledger"
+            className="block p-2 hover:bg-blue-800 rounded"
+          >
+            Ledger Entries
+          </Link>
 
           {role === "admin" && (
-            <Link to="/admin/users" className="block p-2 hover:bg-blue-800 rounded">
+            <Link
+              to="/admin/users"
+              className="block p-2 hover:bg-blue-800 rounded"
+            >
               All Users
             </Link>
           )}
-
         </nav>
 
         <button

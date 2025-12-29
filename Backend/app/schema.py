@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from enum import Enum
+from typing import Optional, Dict
 
 class UserResponse(BaseModel):
     id: int
@@ -57,3 +58,33 @@ class DocumentResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class LedgerAction(str, Enum):
+    ISSUED = "ISSUED"
+    AMENDED = "AMENDED"
+    SHIPPED = "SHIPPED"
+    RECEIVED = "RECEIVED"
+    PAID = "PAID"
+    CANCELLED = "CANCELLED"
+    VERIFIED = "VERIFIED"
+
+class LedgerCreate(BaseModel):
+    document_id: int
+    action: LedgerAction
+    meta_data: Optional[Dict] = None
+
+class LedgerResponse(BaseModel):
+    id: int
+    document_id: int
+    action: LedgerAction
+    actor_id: int
+    meta_data: Optional[Dict]
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class UpdateMode(str, Enum):
+    overwrite = "overwrite"
+    append = "append"

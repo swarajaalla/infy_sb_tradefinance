@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 
 import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";
+import LedgerEntries from "./pages/LedgerEntries";
 import AdminUsers from "./pages/AdminUsers";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -40,6 +41,11 @@ export default function App() {
         <Route
           path="/documents"
           element={<ProtectedRoute><Documents /></ProtectedRoute>}
+        />
+
+        <Route
+          path="/ledger"
+          element={<ProtectedRoute><LedgerEntries /></ProtectedRoute>}
         />
 
         {/* Admin Only */}
