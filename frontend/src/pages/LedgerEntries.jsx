@@ -1,3 +1,4 @@
+// frontend/src/pages/LedgerEntries.jsx
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import api from "../api/axios";
@@ -15,8 +16,8 @@ const ACTIONS = [
 export default function LedgerEntries() {
   const [entries, setEntries] = useState([]);
   const [status, setStatus] = useState(null);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     document_id: "",
@@ -29,7 +30,7 @@ export default function LedgerEntries() {
   const [documentEntries, setDocumentEntries] = useState([]);
   const [singleEntry, setSingleEntry] = useState(null);
 
-  /* ---------------- API CALLS ---------------- */
+  /* ---------------- LOAD ---------------- */
 
   const loadEntries = async () => {
     try {
@@ -49,6 +50,13 @@ export default function LedgerEntries() {
     }
   };
 
+  useEffect(() => {
+    loadEntries();
+    loadStatus();
+  }, []);
+
+  /* ---------------- CREATE ENTRY ---------------- */
+
   const createEntry = async (e) => {
     e.preventDefault();
     setError("");
@@ -65,11 +73,13 @@ export default function LedgerEntries() {
       await loadEntries();
       await loadStatus();
     } catch (err) {
-      setError(err.response?.data?.detail || "Invalid input data");
+      setError(err.response?.data?.detail || "Invalid input");
     } finally {
       setLoading(false);
     }
   };
+
+  /* ---------------- FILTER ---------------- */
 
   const fetchDocumentEntries = async () => {
     if (!documentId) return;
@@ -77,7 +87,7 @@ export default function LedgerEntries() {
       const res = await api.get(`/ledger/documents/${documentId}/entries`);
       setDocumentEntries(res.data);
     } catch {
-      setError("Failed to load entries for document " + documentId);
+      setError("Failed to load document entries");
     }
   };
 
@@ -87,88 +97,97 @@ export default function LedgerEntries() {
       const res = await api.get(`/ledger/entries/${entryId}`);
       setSingleEntry(res.data);
     } catch {
-      setError("Failed to load entry " + entryId);
+      setError("Failed to load entry");
     }
   };
 
-  useEffect(() => {
-    loadEntries();
-    loadStatus();
-  }, []);
-
   return (
     <Layout>
-      <h1 className="text-2xl font-bold mb-6">Ledger Entries</h1>
+      <h1 className="text-3xl font-bold mb-6">Ledger Entries</h1>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+          {error}
+        </div>
       )}
 
-      {/* CREATE ENTRY */}
-      <form
-        onSubmit={createEntry}
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
-      >
-        <input
-          type="number"
-          className="border rounded px-3 py-2"
-          placeholder="Document ID"
-          value={form.document_id}
-          onChange={(e) => setForm({ ...form, document_id: e.target.value })}
-          required
-        />
+      {/* ---------------- CREATE ---------------- */}
+      <div className="bg-white p-6 rounded shadow mb-8">
+        <h2 className="text-lg font-semibold mb-4">Create Ledger Entry</h2>
 
-        <select
-          className="border rounded px-3 py-2"
-          value={form.action}
-          onChange={(e) => setForm({ ...form, action: e.target.value })}
-          required
+        <form
+          onSubmit={createEntry}
+          className="grid grid-cols-1 md:grid-cols-4 gap-4"
         >
-          <option value="">Select Action</option>
-          {ACTIONS.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
+          <input
+            type="number"
+            className="border rounded px-3 py-2"
+            placeholder="Document ID"
+            value={form.document_id}
+            onChange={(e) =>
+              setForm({ ...form, document_id: e.target.value })
+            }
+            required
+          />
 
-        <input
-          className="border rounded px-3 py-2"
-          placeholder="Meta Data (optional)"
-          value={form.meta_data}
-          onChange={(e) => setForm({ ...form, meta_data: e.target.value })}
-        />
+          <select
+            className="border rounded px-3 py-2"
+            value={form.action}
+            onChange={(e) =>
+              setForm({ ...form, action: e.target.value })
+            }
+            required
+          >
+            <option value="">Select Action</option>
+            {ACTIONS.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
 
-        <button
-          disabled={loading}
-          className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? "Creating..." : "Create"}
-        </button>
-      </form>
+          <input
+            className="border rounded px-3 py-2"
+            placeholder="Meta Data (optional)"
+            value={form.meta_data}
+            onChange={(e) =>
+              setForm({ ...form, meta_data: e.target.value })
+            }
+          />
 
-      {/* ALL ENTRIES TABLE */}
-      <div className="bg-white rounded-lg shadow overflow-x-auto mb-8">
+          <button
+            disabled={loading}
+            className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? "Creating..." : "Create"}
+          </button>
+        </form>
+      </div>
+
+      {/* ---------------- ALL ENTRIES ---------------- */}
+      <div className="bg-white rounded shadow overflow-x-auto mb-8">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+          <thead className="bg-gray-100 text-gray-700 text-xs uppercase">
             <tr>
               <th className="px-4 py-3 text-center">ID</th>
               <th className="px-4 py-3 text-center">Document</th>
               <th className="px-4 py-3 text-center">Action</th>
               <th className="px-4 py-3 text-center">Actor</th>
-              <th className="px-4 py-3 text-center">Created At</th>
+              <th className="px-4 py-3 text-center">Created</th>
             </tr>
           </thead>
           <tbody>
             {entries.map((e, i) => (
               <tr
                 key={e.id}
-                className={`border-t ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                className={`border-t ${
+                  i % 2 === 0 ? "bg-white" : "bg-gray-50"
+                }`}
               >
                 <td className="px-4 py-3 text-center">{e.id}</td>
                 <td className="px-4 py-3 text-center">{e.document_id}</td>
                 <td className="px-4 py-3 text-center">
-                  <span className="px-2 py-1 rounded text-white bg-blue-600 text-xs">
+                  <span className="px-2 py-1 text-xs rounded bg-blue-600 text-white">
                     {e.action}
                   </span>
                 </td>
@@ -182,10 +201,11 @@ export default function LedgerEntries() {
         </table>
       </div>
 
-      {/* ENTRIES BY DOCUMENT */}
-      <div className="mb-6">
-        <h2 className="font-semibold mb-2">Entries by Document ID</h2>
-        <div className="flex gap-2 mb-2">
+      {/* ---------------- FILTER BY DOCUMENT ---------------- */}
+      <div className="bg-white p-6 rounded shadow mb-8">
+        <h2 className="font-semibold mb-3">Entries by Document</h2>
+
+        <div className="flex gap-2 mb-4">
           <input
             type="number"
             className="border rounded px-3 py-2"
@@ -195,47 +215,29 @@ export default function LedgerEntries() {
           />
           <button
             onClick={fetchDocumentEntries}
-            className="bg-green-600 text-white px-3 py-1 rounded"
+            className="bg-green-600 text-white px-4 py-2 rounded"
           >
             Load
           </button>
         </div>
 
         {documentEntries.length > 0 && (
-          <div className="bg-white rounded-lg shadow overflow-x-auto mb-4">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
-                <tr>
-                  <th className="px-4 py-3 text-center">ID</th>
-                  <th className="px-4 py-3 text-center">Action</th>
-                  <th className="px-4 py-3 text-center">Actor</th>
-                  <th className="px-4 py-3 text-center">Created At</th>
-                </tr>
-              </thead>
-              <tbody>
-                {documentEntries.map((e, i) => (
-                  <tr
-                    key={e.id}
-                    className={`border-t ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                  >
-                    <td className="px-4 py-3 text-center">{e.id}</td>
-                    <td className="px-4 py-3 text-center">{e.action}</td>
-                    <td className="px-4 py-3 text-center">{e.actor_id}</td>
-                    <td className="px-4 py-3 text-center">
-                      {new Date(e.created_at).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="divide-y">
+            {documentEntries.map((e) => (
+              <li key={e.id} className="py-2 flex justify-between text-sm">
+                <span>{e.action}</span>
+                <span>{new Date(e.created_at).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
-      {/* SINGLE ENTRY BY ID */}
-      <div>
-        <h2 className="font-semibold mb-2">Single Entry by ID</h2>
-        <div className="flex gap-2 mb-2">
+      {/* ---------------- SINGLE ENTRY ---------------- */}
+      <div className="bg-white p-6 rounded shadow mb-8">
+        <h2 className="font-semibold mb-3">Single Entry</h2>
+
+        <div className="flex gap-2 mb-4">
           <input
             type="number"
             className="border rounded px-3 py-2"
@@ -245,55 +247,41 @@ export default function LedgerEntries() {
           />
           <button
             onClick={fetchSingleEntry}
-            className="bg-purple-600 text-white px-3 py-1 rounded"
+            className="bg-purple-600 text-white px-4 py-2 rounded"
           >
             Load
           </button>
         </div>
 
         {singleEntry && (
-          <div className="bg-white rounded-lg shadow overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
-                <tr>
-                  <th className="px-4 py-3 text-center">ID</th>
-                  <th className="px-4 py-3 text-center">Document</th>
-                  <th className="px-4 py-3 text-center">Action</th>
-                  <th className="px-4 py-3 text-center">Actor</th>
-                  <th className="px-4 py-3 text-center">Created At</th>
-                  {/* <th className="px-4 py-3 text-center">Meta Data</th> */}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t bg-white">
-                  <td className="px-4 py-3 text-center">{singleEntry.id}</td>
-                  <td className="px-4 py-3 text-center">{singleEntry.document_id}</td>
-                  <td className="px-4 py-3 text-center">{singleEntry.action}</td>
-                  <td className="px-4 py-3 text-center">{singleEntry.actor_id}</td>
-                  <td className="px-4 py-3 text-center">{new Date(singleEntry.created_at).toLocaleString()}</td>
-                  {/* <td className="px-4 py-3 text-center">{singleEntry.meta_data || "N/A"}</td> */}
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <pre className="bg-gray-100 p-4 rounded text-sm">
+            {JSON.stringify(singleEntry, null, 2)}
+          </pre>
         )}
       </div>
 
-      {/* LEDGER STATUS */}
+      {/* ---------------- STATUS ---------------- */}
       {status && (
-        <div className="bg-white rounded-lg shadow p-6 mt-6">
+        <div className="bg-white p-6 rounded shadow">
           <h2 className="text-lg font-semibold mb-4">Ledger Summary</h2>
 
-          <div className="mb-4">
-            <span className="text-gray-600">Total Entries:</span>
-            <span className="ml-2 font-bold text-blue-600">{status.total_entries}</span>
-          </div>
+          <p className="mb-4">
+            Total Entries:{" "}
+            <span className="font-bold text-blue-600">
+              {status.total_entries}
+            </span>
+          </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(status.by_action).map(([action, count]) => (
-              <div key={action} className="border rounded p-4 text-center bg-gray-50">
+              <div
+                key={action}
+                className="border rounded p-4 text-center bg-gray-50"
+              >
                 <div className="text-sm text-gray-600">{action}</div>
-                <div className="text-xl font-bold text-blue-600">{count}</div>
+                <div className="text-xl font-bold text-blue-600">
+                  {count}
+                </div>
               </div>
             ))}
           </div>

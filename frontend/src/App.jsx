@@ -6,7 +6,9 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";
 import LedgerEntries from "./pages/LedgerEntries";
+import Trades from "./pages/Trades";
 import AdminUsers from "./pages/AdminUsers";
+import IntegrityCheckPage from "./pages/IntegrityCheckPage"; 
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -14,12 +16,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Role Dashboards */}
+        {/* Dashboards */}
         <Route
           path="/admin/dashboard"
           element={<ProtectedRoute><Dashboard role="admin" /></ProtectedRoute>}
@@ -37,7 +38,7 @@ export default function App() {
           element={<ProtectedRoute><Dashboard role="auditor" /></ProtectedRoute>}
         />
 
-        {/* Shared Pages */}
+        {/* Shared */}
         <Route
           path="/documents"
           element={<ProtectedRoute><Documents /></ProtectedRoute>}
@@ -48,12 +49,21 @@ export default function App() {
           element={<ProtectedRoute><LedgerEntries /></ProtectedRoute>}
         />
 
-        {/* Admin Only */}
+        {/* Trades (ONLY ONE PAGE) */}
+        <Route
+          path="/trades"
+          element={<ProtectedRoute><Trades /></ProtectedRoute>}
+        />
+
+        {/* Admin */}
         <Route
           path="/admin/users"
           element={<ProtectedRoute><AdminUsers /></ProtectedRoute>}
         />
-
+        <Route
+          path="/admin/integrity-check"
+          element={<ProtectedRoute><IntegrityCheckPage /></ProtectedRoute>}
+        />
       </Routes>
     </BrowserRouter>
   );

@@ -6,6 +6,9 @@ from app.auth.dependencies import role_required
 from app.routers import router as users_router
 from app.document_routes import router as docs_router
 from app.ledger_routes import router as ledger_router
+from app.trade_routes import router as trade_router
+from app.admin_routes import router as admin_router
+
 
 app = FastAPI(title="Trade Finance Explorer API")
 
@@ -22,6 +25,9 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(docs_router)
 app.include_router(ledger_router)
+app.include_router(trade_router)
+app.include_router(admin_router)
+
 
 @app.get("/")
 def home():
