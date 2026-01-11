@@ -23,8 +23,6 @@ const Users = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Users</h1>
-
       {error && <p className="text-red-500">{error}</p>}
 
       <table className="w-full border">
@@ -52,5 +50,4 @@ const Users = () => {
     </div>
   );
 };
-
 export default Users;

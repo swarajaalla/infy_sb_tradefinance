@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
-import { Link, useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
 
 const Register = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -12,53 +15,106 @@ const Register = () => {
     org_name: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await api.post("/auth/register", form);
-    alert("Registration successful");
-    navigate("/login");
+    setLoading(true);
+
+    try {
+      await api.post("/auth/register", form);
+      toast.success("Registration successful. Please login.");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1200);
+    } catch (err) {
+      toast.error(
+        err.response?.data?.detail ||
+          "Registration failed. Please check inputs."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded shadow w-96 space-y-3"
-      >
-        <h1 className="text-xl font-bold text-center">Register</h1>
+    <div className="min-h-screen flex items-center justify-center bg-slate-100">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+        <h1 className="text-2xl font-bold text-center text-indigo-600">
+          Create Account
+        </h1>
+        <p className="text-sm text-center text-slate-600 mt-1">
+          Trade Finance Explorer
+        </p>
 
-        <input className="border p-2 w-full" placeholder="Name"
-          onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <input
+            name="name"
+            placeholder="Full Name"
+            className="input"
+            onChange={handleChange}
+            required
+          />
 
-        <input className="border p-2 w-full" placeholder="Email"
-          onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            className="input"
+            onChange={handleChange}
+            required
+          />
 
-        <input type="password" className="border p-2 w-full" placeholder="Password"
-          onChange={(e) => setForm({ ...form, password: e.target.value })} />
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            className="input"
+            onChange={handleChange}
+            required
+          />
 
-        <select
-        className="border p-2 w-full"  value={form.role}
-        onChange={(e) => setForm({ ...form, role: e.target.value })}
-        >
-          <option value="" disabled>Select Role</option>
-          <option value="bank">Bank</option>.
-          <option value="corporate">Corporate</option>
-          <option value="auditor">Auditor</option>
-        </select>
+          <select
+            name="role"
+            className="select"
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select Role</option>
+            <option value="bank">Bank</option>
+            <option value="corporate">Corporate</option>
+            <option value="auditor">Auditor</option>
+            <option value="admin">Admin</option>
+          </select>
 
+          <input
+            name="org_name"
+            placeholder="Organisation Name"
+            className="input"
+            onChange={handleChange}
+            required
+          />
 
+          <button
+            disabled={loading}
+            className="btn btn-primary w-full justify-center"
+          >
+            {loading ? "Registering..." : "Register"}
+          </button>
+        </form>
 
-        <input className="border p-2 w-full" placeholder="Organisation"
-          onChange={(e) => setForm({ ...form, org_name: e.target.value })} />
-
-        <button className="bg-green-600 text-white w-full py-2 rounded">
-          Register
-        </button>
-
-        <Link to="/login" className="block text-center text-blue-600 underline">
-          Back to Login
-        </Link>
-      </form>
+        <p className="text-sm text-center text-slate-600 mt-6">
+          Already registered?{" "}
+          <Link to="/login" className="text-indigo-600 font-medium">
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };

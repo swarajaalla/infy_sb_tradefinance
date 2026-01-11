@@ -1,312 +1,295 @@
 import { useEffect, useState } from "react";
-import api from "../api/axios";
 import { useAuth } from "../auth/AuthContext";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import api from "../api/axios";
+import { useToast } from "../context/ToastContext";
 
 const Documents = () => {
   const { user } = useAuth();
-  const [docs, setDocs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const toast = useToast();
+  const role = user.role.toLowerCase();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tradeId = searchParams.get("trade_id");
+  const editId = searchParams.get("edit");
 
-  const [editingId, setEditingId] = useState(null);
+  const isCorporate = role === "corporate";
+  const isBank = role === "bank";
+  const isAdmin = role === "admin";
 
-  const [form, setForm] = useState({
+  const [mode, setMode] = useState(editId ? "edit" : "menu");
+
+  const [uploadForm, setUploadForm] = useState({
     doc_type: "",
     doc_number: "",
     issued_at: "",
     file: null,
   });
 
+  const [editForm, setEditForm] = useState({
+    doc_type: "",
+    doc_number: "",
+    file: null,
+  });
+
   const [verifyHash, setVerifyHash] = useState("");
   const [verifyFile, setVerifyFile] = useState(null);
-  const [verifyResult, setVerifyResult] = useState(null);
-
-  const role = user?.role?.toLowerCase();
-  const isCorporate = role === "corporate";
-  const isAuditor = role === "auditor";
-  const isAdmin = role === "admin";
-
-  // ---------------- Load Docs ----------------
-  const loadDocuments = async () => {
-    try {
-      const res = await api.get("/documents/list");
-      setDocs(res.data);
-    } catch (err) {
-      console.error("Failed to load documents", err);
-    }
-  };
 
   useEffect(() => {
-    if (!isAdmin) loadDocuments();
-  }, [isAdmin]);
+    if (!editId) return;
 
-  // ---------------- Upload / Update ----------------
-  const handleSubmit = async (e) => {
+    const loadDoc = async () => {
+      try {
+        const res = await api.get(`/documents/view/${editId}`);
+        setEditForm({
+          doc_type: res.data.doc_type,
+          doc_number: res.data.doc_number,
+          file: null,
+        });
+      } catch {
+        toast.error("Failed to load document");
+      }
+    };
+
+    loadDoc();
+  }, [editId, toast]);
+
+  const handleUpload = async (e) => {
     e.preventDefault();
-
-    if (!form.file) {
-      return alert("❗ Please re-select the file to update/upload");
-    }
+    const fd = new FormData();
+    fd.append("trade_id", tradeId);
+    Object.entries(uploadForm).forEach(([k, v]) => fd.append(k, v));
 
     try {
-      setLoading(true);
-
-      const data = new FormData();
-      data.append("doc_type", form.doc_type);
-      data.append("doc_number", form.doc_number);
-      data.append("file", form.file);
-
-      if (editingId) {
-        await api.put(`/documents/update/${editingId}`, data);
-        alert("✅ Document updated successfully");
-      } else {
-        data.append("issued_at", form.issued_at);
-        await api.post("/documents/upload", data);
-        alert("✅ Document uploaded successfully");
-      }
-
-      setForm({
-        doc_type: "",
-        doc_number: "",
-        issued_at: "",
-        file: null,
-      });
-      setEditingId(null);
-      loadDocuments();
-    } catch (err) {
-      console.error("Operation failed:", err.response?.data || err.message);
-      alert("❌ Operation failed");
-    } finally {
-      setLoading(false);
+      await api.post("/documents/upload", fd);
+      toast.success("Document uploaded successfully");
+      setMode("menu");
+    } catch {
+      toast.error("Document upload failed");
     }
   };
 
-  // ---------------- Verify Hash (Auditor) ----------------
-  const handleVerify = async () => {
-    if (!verifyHash || !verifyFile)
-      return alert("Enter hash and choose file");
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    const fd = new FormData();
+    fd.append("doc_type", editForm.doc_type);
+    fd.append("doc_number", editForm.doc_number);
+    fd.append("file", editForm.file);
 
     try {
-      const data = new FormData();
-      data.append("hash_code", verifyHash);
-      data.append("file", verifyFile);
-
-      const res = await api.post("/documents/verify-hash", data);
-      setVerifyResult(res.data);
+      await api.put(`/documents/update/${editId}`, fd);
+      toast.success("Document updated successfully");
+      navigate("/documents/list");
     } catch {
-      alert("❌ Verification failed");
+      toast.error("Document update failed");
+    }
+  };
+
+  const handleVerify = async () => {
+    const fd = new FormData();
+    fd.append("hash_code", verifyHash);
+    fd.append("file", verifyFile);
+
+    try {
+      const res = await api.post("/documents/verify-hash", fd);
+
+      if (res.data.verified) {
+        toast.success("Document hash verified successfully");
+      } else {
+        toast.error(res.data.reason || "Verification failed");
+      }
+
+      setMode("menu");
+    } catch {
+      toast.error("Verification failed");
     }
   };
 
   if (isAdmin) {
     return (
-      <div className="p-6 text-red-600 font-semibold">
-        Admins are not allowed to access documents.
+      <div className="bg-white p-6 rounded-xl shadow">
+        <h1 className="text-xl font-bold">Documents</h1>
+        <p className="text-slate-600 mt-2">
+          Admin users do not manage documents directly.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Documents</h1>
+    <div className="space-y-8">
+      {mode === "menu" && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl">
+          <button
+            onClick={() => navigate("/documents/list")}
+            className="bg-white border rounded-xl p-6 hover:shadow-lg transition"
+          >
+            📄 View Documents
+          </button>
 
-      {/* ---------------- Upload / Update Form ---------------- */}
-      {isCorporate && (
+          {isCorporate && (
+            <button
+              onClick={() => setMode("upload")}
+              className="bg-white border rounded-xl p-6 hover:shadow-lg transition"
+            >
+              ⬆ Upload Document
+            </button>
+          )}
+
+          {(isCorporate || isBank) && (
+            <button
+              onClick={() => setMode("verify")}
+              className="bg-white border rounded-xl p-6 hover:shadow-lg transition"
+            >
+              🔐 Verify Hash
+            </button>
+          )}
+        </div>
+      )}
+
+      {mode === "upload" && isCorporate && (
         <form
-          onSubmit={handleSubmit}
-          className="bg-white p-4 rounded shadow space-y-4"
+          onSubmit={handleUpload}
+          className="bg-white p-6 rounded-xl shadow space-y-4 max-w-xl"
         >
-          <h2 className="text-lg font-semibold">
-            {editingId ? "Update Document" : "Upload Document"}
-          </h2>
+          <h2 className="font-semibold text-lg">Upload Document</h2>
+
+          <input
+            className="input"
+            placeholder="Document Number"
+            onChange={(e) =>
+              setUploadForm({ ...uploadForm, doc_number: e.target.value })
+            }
+            required
+          />
 
           <select
-            className="border p-2 w-full"
-            value={form.doc_type}
+            className="input"
             onChange={(e) =>
-              setForm({ ...form, doc_type: e.target.value })
+              setUploadForm({ ...uploadForm, doc_type: e.target.value })
             }
             required
           >
-            <option value="">Select Document Type</option>
+            <option value="">Type</option>
             <option value="INVOICE">Invoice</option>
             <option value="BL">Bill of Lading</option>
-            <option value="PO">Purchase Order</option>
             <option value="LOC">Letter of Credit</option>
           </select>
 
           <input
-            className="border p-2 w-full"
-            placeholder="Document Number"
-            value={form.doc_number}
+            type="date"
+            className="input"
             onChange={(e) =>
-              setForm({ ...form, doc_number: e.target.value })
+              setUploadForm({ ...uploadForm, issued_at: e.target.value })
             }
             required
           />
 
-          {!editingId && (
-            <input
-              type="date"
-              className="border p-2 w-full"
-              value={form.issued_at}
-              onChange={(e) =>
-                setForm({ ...form, issued_at: e.target.value })
-              }
-              required
-            />
-          )}
-
-          {/* ✅ File input with key fix */}
           <input
-            key={editingId || "new"}
             type="file"
-            className="border p-2 w-full"
-            onChange={(e) => {
-              const file = e.target.files[0];
-              setForm((prev) => ({ ...prev, file }));
-            }}
+            className="input"
+            onChange={(e) =>
+              setUploadForm({ ...uploadForm, file: e.target.files[0] })
+            }
             required
           />
 
-          <div className="flex gap-2">
+          <div className="flex gap-3 pt-2">
+            <button className="btn btn-primary">Upload</button>
             <button
-              disabled={loading}
-              className="bg-blue-600 text-white px-4 py-2 rounded"
+              type="button"
+              onClick={() => setMode("menu")}
+              className="btn btn-outline"
             >
-              {loading
-                ? editingId
-                  ? "Updating..."
-                  : "Uploading..."
-                : editingId
-                ? "Update"
-                : "Upload"}
+              Cancel
             </button>
-
-            {editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingId(null);
-                  setForm({
-                    doc_type: "",
-                    doc_number: "",
-                    issued_at: "",
-                    file: null,
-                  });
-                }}
-                className="bg-gray-400 text-white px-4 py-2 rounded"
-              >
-                Cancel
-              </button>
-            )}
           </div>
         </form>
       )}
 
-      {/* ---------------- Verify (Auditor) ---------------- */}
-      {isAuditor && (
-        <div className="bg-white p-4 rounded shadow space-y-3">
-          <h2 className="text-lg font-semibold">Verify Document Hash</h2>
+      {mode === "verify" && (
+        <div className="bg-white p-6 rounded-xl shadow space-y-4 max-w-xl">
+          <h2 className="font-semibold text-lg">Verify Document Hash</h2>
 
           <input
-            className="border p-2 w-full"
-            placeholder="Enter hash"
+            className="input"
+            placeholder="Hash value"
             value={verifyHash}
             onChange={(e) => setVerifyHash(e.target.value)}
           />
 
           <input
             type="file"
-            className="border p-2 w-full"
+            className="input"
             onChange={(e) => setVerifyFile(e.target.files[0])}
           />
 
-          <button
-            onClick={handleVerify}
-            className="bg-green-600 text-white px-4 py-2 rounded"
-          >
-            Verify
-          </button>
-
-          {verifyResult && (
-            <div
-              className={`p-3 rounded text-white ${
-                verifyResult.matched ? "bg-green-600" : "bg-red-600"
-              }`}
+          <div className="flex gap-3 pt-2">
+            <button onClick={handleVerify} className="btn btn-primary">
+              Verify
+            </button>
+            <button
+              onClick={() => setMode("menu")}
+              className="btn btn-outline"
             >
-              <p className="font-semibold">{verifyResult.message}</p>
-              {verifyResult.matched && (
-                <p>
-                  ✅ Document ID: <b>{verifyResult.document_id}</b>
-                </p>
-              )}
-            </div>
-          )}
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ---------------- List ---------------- */}
-      <div className="bg-white p-4 rounded shadow">
-        <h2 className="text-lg font-semibold mb-3">Document List</h2>
+      {mode === "edit" && isCorporate && (
+        <form
+          onSubmit={handleUpdate}
+          className="bg-white p-6 rounded-xl shadow space-y-4 max-w-xl"
+        >
+          <h2 className="font-semibold text-lg">
+            Update Document (ID: {editId})
+          </h2>
 
-        <table className="w-full border text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border p-2">ID</th>
-              <th className="border p-2">Type</th>
-              <th className="border p-2">Number</th>
-              <th className="border p-2">Org</th>
-              <th className="border p-2">Issued</th>
-              <th className="border p-2">File</th>
-              <th className="border p-2">Hash</th>
-              {isCorporate && <th className="border p-2">Action</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {docs.map((d) => (
-              <tr key={d.id}>
-                <td className="border p-2">{d.id}</td>
-                <td className="border p-2">{d.doc_type}</td>
-                <td className="border p-2">{d.doc_number}</td>
-                <td className="border p-2">{d.org_name}</td>
-                <td className="border p-2">
-                  {new Date(d.issued_at).toLocaleDateString()}
-                </td>
-                <td className="border p-2">
-                  <a
-                    href={`${import.meta.env.VITE_API_URL}${d.file_url}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-600 underline"
-                  >
-                    View
-                  </a>
-                </td>
-                <td className="border p-2 truncate max-w-xs">{d.hash}</td>
+          <input
+            className="input"
+            value={editForm.doc_number}
+            onChange={(e) =>
+              setEditForm({ ...editForm, doc_number: e.target.value })
+            }
+            required
+          />
 
-                {isCorporate && (
-                  <td className="border p-2">
-                    <button
-                      onClick={() => {
-                        setEditingId(d.id);
-                        setForm({
-                          doc_type: d.doc_type,
-                          doc_number: d.doc_number,
-                          issued_at: d.issued_at.split("T")[0],
-                          file: null,
-                        });
-                      }}
-                      className="text-blue-600 underline"
-                    >
-                      Edit
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          <select
+            className="input"
+            value={editForm.doc_type}
+            onChange={(e) =>
+              setEditForm({ ...editForm, doc_type: e.target.value })
+            }
+            required
+          >
+            <option value="INVOICE">Invoice</option>
+            <option value="BL">Bill of Lading</option>
+            <option value="LOC">Letter of Credit</option>
+          </select>
+
+          <input
+            type="file"
+            className="input"
+            onChange={(e) =>
+              setEditForm({ ...editForm, file: e.target.files[0] })
+            }
+            required
+          />
+
+          <div className="flex gap-3 pt-2">
+            <button className="btn btn-primary">Update</button>
+            <button
+              type="button"
+              onClick={() => navigate("/documents/list")}
+              className="btn btn-outline"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 };

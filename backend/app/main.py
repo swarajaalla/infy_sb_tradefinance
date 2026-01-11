@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -6,10 +7,24 @@ from sqlmodel import Session
 from .database import get_session
 from . import schemas, crud
 from .auth import create_access_token, create_refresh_token, verify_password
-from .routers import users, documents, ledger
+from .routers import users, documents, ledger,trades
+from .routers import integrity
+
 
 app = FastAPI(title="Trade Finance Backend")
 
+# --------------------------------------------------
+# FILE UPLOAD SETUP (FIXED)
+# --------------------------------------------------
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))   # app/
+UPLOAD_DIR = os.path.join(BASE_DIR, "..", "uploads")    # backend/uploads
+
+# ✅ Ensure uploads directory exists BEFORE mounting
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# ✅ Mount uploads only once
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.get("/", include_in_schema=False)
 def root():
@@ -18,11 +33,15 @@ def root():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -80,10 +99,9 @@ def login(
     )
 
 
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-
 app.include_router(auth_router)
 app.include_router(users.router)
 app.include_router(documents.router)
 app.include_router(ledger.router)
-
+app.include_router(trades.router)
+app.include_router(integrity.router)

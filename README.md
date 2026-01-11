@@ -4,7 +4,7 @@
 
 The **Trade Finance Blockchain Explorer** is a full-stack web application designed to digitally manage and track **trade finance documents** such as **Letters of Credit, Invoices, Bills of Lading, and Purchase Orders** in a **secure, transparent, and auditable** manner.
 
-The system ensures **document integrity** using cryptographic hash values and maintains an **immutable audit trail (ledger)** of all important actions like upload, access, verification, and modification.
+The system ensures **document integrity** using cryptographic hash values and maintains an **immutable audit trail (ledger)** of all important actions like upload, access, verification, modification, and integrity validation.
 
 This project is developed as part of the **Infosys Springboard Virtual Internship 6.0**.
 
@@ -12,46 +12,116 @@ This project is developed as part of the **Infosys Springboard Virtual Internshi
 
 ## 🎯 Project Objectives
 
-* Digitize trade finance document management
-* Ensure document integrity using SHA-256 hash values
-* Implement secure authentication and authorization
-* Enforce role-based and organisation-based access
-* Maintain an audit trail for transparency and compliance
-* Provide a simple blockchain-inspired ledger view
+- Digitize trade finance document management
+- Ensure document integrity using SHA-256 hash values
+- Detect document tampering using runtime hash comparison
+- Implement secure authentication and authorization
+- Enforce role-based and organisation-based access
+- Maintain an immutable audit trail for compliance
+- Provide an Integrity Dashboard for Admin & Auditor
 
 ---
 
 ## ✨ Key Features
 
-* 🔐 **Authentication & Authorization**
+### 🔐 Authentication & Authorization
 
-  * JWT-based authentication
-  * Role-based access control (Admin, Auditor, Bank, Corporate)
+- JWT-based authentication
+- Role-based access control:
 
-* 📄 **Document Management**
+  - Admin
+  - Auditor
+  - Bank
+  - Corporate
 
-  * Upload and update trade finance documents
-  * Automatic hash generation for each document
-  * Organisation-specific document visibility
+---
 
-* 🧾 **Ledger / Audit Trail**
+### 📄 Document Management
 
-  * Immutable log of all document events:
+- Upload and update trade finance documents
+- Automatic SHA-256 hash generation
+- Organisation-specific document visibility
+- Secure file storage
 
-    * UPLOADED
-    * ACCESSED
-    * VERIFIED
-    * MODIFIED
-  * Viewable only by auditors
+---
 
-* 👥 **User Management**
+### 🧾 Ledger / Audit Trail
 
-  * Admin can view all users
-  * Role and organisation assigned to each user
+- Immutable log of all document events:
 
-* 📊 **Dashboard**
+  - `UPLOADED`
+  - `ACCESSED`
+  - `VERIFIED`
+  - `MODIFIED`
+  - `INTEGRITY_FAILED`
 
-  * Displays logged-in user role and organisation details
+- Ledger acts as a **legal audit trail**
+- Viewable by Admin and Auditor
+
+---
+
+### 🔍 Integrity Check System (Admin & Auditor)
+
+The Integrity module verifies that documents have **not been tampered with** after upload.
+
+**Capabilities:**
+
+- Run integrity checks on:
+
+  - All documents
+  - Specific document IDs
+
+- Runtime hash recomputation
+- Compare:
+
+  - Stored hash (original)
+  - Computed hash (current)
+
+- Status results:
+
+  - `PASSED` – File unchanged
+  - `FAILED` – Hash mismatch / File missing
+  - `PENDING` – File inaccessible or unreadable
+
+**Integrity Dashboard Displays:**
+
+- Total checks
+- Passed / Failed / Pending counts
+- Filter tabs: All / Passed / Failed / Pending
+- Detailed table:
+
+  - Document ID
+  - Check Type
+  - Stored Hash
+  - Computed Hash
+  - Status
+  - Timestamp
+
+---
+
+### 🚨 Alert System (Admin & Auditor)
+
+- Failed integrity checks generate **alerts**
+- Alerts include:
+
+  - Document ID
+  - Failure reason (Missing file / Hash mismatch)
+
+- Admin/Auditor can:
+
+  - View active alerts
+  - Acknowledge alerts
+
+- Acknowledgement means:
+
+  > “This issue has been noticed and will be investigated.”
+
+---
+
+### 👥 User Management
+
+- Admin can view all users
+- Role and organisation assigned to each user
 
 ---
 
@@ -59,30 +129,30 @@ This project is developed as part of the **Infosys Springboard Virtual Internshi
 
 ### Frontend
 
-* React.js
-* Tailwind CSS
-* Vite
-* Axios
-* React Router
+- React.js
+- Tailwind CSS
+- Vite
+- Axios
+- React Router
 
 ### Backend
 
-* FastAPI
-* SQLModel
-* PostgreSQL
-* JWT Authentication
-* Passlib (Password Hashing)
+- FastAPI
+- SQLModel
+- PostgreSQL
+- JWT Authentication
+- Passlib (Password Hashing)
 
 ---
 
 ## 🔑 User Roles & Access Control
 
-| Role          | Permissions                                       |
-| ------------- | ------------------------------------------------- |
-| **Admin**     | View all users, manage system                     |
-| **Auditor**   | Read-only access to all documents and full ledger |
-| **Bank**      | View documents belonging to own organisation      |
-| **Corporate** | Upload and update documents for own organisation  |
+| Role          | Permissions                                                  |
+| ------------- | ------------------------------------------------------------ |
+| **Admin**     | Manage users, run integrity checks, view alerts & ledger     |
+| **Auditor**   | Read-only access, run integrity checks, view ledger & alerts |
+| **Bank**      | View documents of own organisation                           |
+| **Corporate** | Upload and update documents of own organisation              |
 
 ---
 
@@ -99,6 +169,7 @@ project-root/
 │   │   ├── routers/
 │   │   │   ├── documents.py
 │   │   │   ├── ledger.py
+│   │   │   ├── integrity.py
 │   │   │   └── users.py
 │   │   └── main.py
 │   └── requirements.txt
@@ -168,21 +239,6 @@ http://localhost:5173
 VITE_API_URL=http://127.0.0.1:8000
 ```
 
-⚠️ This file is not committed to GitHub for security reasons.
-
----
-
-## 🧪 Sample Document Data
-
-```json
-{
-  "doc_type": "INVOICE",
-  "doc_number": "INV-2025-001",
-  "issued_at": "2025-12-20",
-  "hash": "a94a8fe5ccb19ba61c4c0873d391e987"
-}
-```
-
 ---
 
 ## 👥 Project Team
@@ -190,35 +246,31 @@ VITE_API_URL=http://127.0.0.1:8000
 This project was developed as a **group project** under the
 **Infosys Springboard Virtual Internship 6.0**.
 
-* **Group Name:** Group C
-* **Team Size:** 6 Members
+- **Group Name:** Group C
+- **Team Size:** 6 Members
 
 ### Team Members
 
-* Bhavana Uddanti
-* Kashish Badkhal
-* Vinay Jalla
-* Kanishka P
-* Harish Karthik
-* Jaya
+- Bhavana Uddanti
+- Kashish Badkhal
+- Vinay Jalla
+- Kanishka P
+- Harish Karthik
+- Jaya
 
 **Domain:** Full-Stack Web Development
 
 ---
 
-## 🔮 Future Enhancements
-
-* Blockchain network integration for true immutability
-* Refresh token support
-* Organisation-wise analytics dashboard
-* Advanced audit reports
-* File version comparison
-* Download and export ledger reports
-
----
-
 ## 🏁 Conclusion
 
-The **Trade Finance Blockchain Explorer** provides a **secure, role-based, and auditable document management platform** inspired by blockchain principles. It demonstrates how modern web technologies can be applied to solve real-world trade finance challenges with transparency and trust.
+The **Trade Finance Blockchain Explorer** is not just a document management system—it is a **compliance-grade integrity platform**. By combining:
+
+- Cryptographic hashing
+- Runtime integrity verification
+- Alerts & acknowledgement flow
+- Immutable ledger
+
+it demonstrates how blockchain-inspired principles can be applied to real-world trade finance to ensure **trust, transparency, and fraud detection**.
 
 ---

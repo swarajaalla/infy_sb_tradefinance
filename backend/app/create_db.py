@@ -2,7 +2,6 @@ from sqlmodel import Session
 from .database import engine, init_db
 from . import crud
 from .models import Role
-from .auth import create_refresh_token
 
 def seed():
     init_db()
@@ -18,15 +17,14 @@ def seed():
         for u in users_to_create:
             existing = crud.get_user_by_email(session, u["email"])
             if not existing:
-                user = crud.create_user(session=session, name=u["name"], email=u["email"], password=u["password"], role=u["role"], org_name=u["org_name"])
-                payload = {"sub": str(user.id), "role": user.role if not hasattr(user.role, "value") else user.role.value}
-                refresh = create_refresh_token(payload)
-                crud.set_refresh_token_for_user(session, user, refresh)
-            else:
-                if not getattr(existing, "refresh_token", None):
-                    payload = {"sub": str(existing.id), "role": existing.role if not hasattr(existing.role, "value") else existing.role.value}
-                    refresh = create_refresh_token(payload)
-                    crud.set_refresh_token_for_user(session, existing, refresh)
+                crud.create_user(
+                    session=session,
+                    name=u["name"],
+                    email=u["email"],
+                    password=u["password"],
+                    role=u["role"],
+                    org_name=u["org_name"],
+                )
 
     print("Seeded default users.")
 

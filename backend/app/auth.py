@@ -17,9 +17,11 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# 🔹 Simple HTTP Bearer auth (no OAuth2 form)
+# 🔐 Simple Bearer token auth
 security = HTTPBearer()
 
+
+# ---------------- PASSWORD UTILS ----------------
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
@@ -29,7 +31,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+# ---------------- TOKEN UTILS ----------------
+
+def create_access_token(
+    data: dict, expires_delta: Optional[timedelta] = None
+) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + (
         expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -37,30 +43,36 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+
+def create_refresh_token(
+    data: dict, expires_delta: Optional[timedelta] = None
+) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    )
     to_encode.update({"exp": expire, "type": "refresh"})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def decode_token(token: str) -> Optional[dict]:
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         return None
 
+
+# ---------------- CURRENT USER ----------------
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     session: Session = Depends(get_session),
 ) -> models.User:
     """
-    Extracts the Bearer token from the Authorization header,
-    decodes it, and returns the current user.
+    Extract Bearer token, decode JWT, and return the logged-in user.
     """
-    token = credentials.credentials  # 👈 the actual JWT string (after "Bearer ")
+
+    token = credentials.credentials
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -77,8 +89,8 @@ def get_current_user(
 
     statement = select(models.User).where(models.User.id == int(user_id))
     user = session.exec(statement).first()
+
     if user is None:
         raise credentials_exception
-    return user
 
-
+    return user   # ✅ FIXED (this was crashing earlier)
