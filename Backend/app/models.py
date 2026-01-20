@@ -1,6 +1,6 @@
 # app/models.py
 from sqlalchemy import (
-    Column, Integer, String, Enum, DateTime, ForeignKey,
+    Column, Integer, String, Enum, DateTime, ForeignKey,Float,
     Numeric, JSON,Text,Boolean
 )
 from sqlalchemy.orm import relationship
@@ -30,6 +30,8 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False)
     org_name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_verified = Column(Boolean, default=False)
+    risk_score = relationship("RiskScore", back_populates="user", uselist=False)
 
 
 # -------------------------
@@ -200,3 +202,22 @@ class IntegrityCheck(Base):
     
     # Relationships
     started_by_user = relationship("User", foreign_keys=[started_by])
+
+class RiskScore(Base):
+    __tablename__ = "risk_scores"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    score = Column(Float, nullable=False, default=50.0)
+    risk_level = Column(String(20), nullable=False, default="medium")
+    factors = Column(JSON, nullable=True)
+    last_calculated = Column(DateTime, default=datetime.utcnow)
+    
+    # FIX THIS LINE - Use a callable function instead of lambda
+    expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(hours=24))
+    
+    # Relationship
+    user = relationship("User", back_populates="risk_score")
+    
+    def __repr__(self):
+        return f"<RiskScore(user_id={self.user_id}, score={self.score}, level={self.risk_level})>"

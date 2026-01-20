@@ -60,7 +60,7 @@ def list_trades(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role == UserRole.admin:
+    if current_user.role in [UserRole.admin, UserRole.auditor]:
         return db.query(Trade).all()
 
     if current_user.role == UserRole.bank:
@@ -141,7 +141,7 @@ def get_trade(
         raise HTTPException(status_code=404, detail="Trade not found")
 
     if (
-        current_user.role not in [UserRole.admin, UserRole.bank]
+        current_user.role not in [UserRole.admin, UserRole.auditor,UserRole.bank]
         and current_user.email not in [trade.buyer_email, trade.seller_email]
     ):
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -153,7 +153,7 @@ def get_trade(
 # PATCH /trades/{trade_id}/status
 # -------------------------------------------------
 
-from app.models import TradeStatus  # Import the model enum
+#from app.models import TradeStatus  # Import the model enum
 
 @router.patch("/{trade_id}/status", response_model=TradeResponse)
 def update_trade_status(
@@ -162,6 +162,12 @@ def update_trade_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if current_user.role == UserRole.auditor:
+        raise HTTPException(
+            status_code=403,
+            detail="Auditor has read-only access and cannot modify trades"
+        )
+
     trade = db.query(Trade).filter(Trade.id == trade_id).first()
     
     if not trade:
@@ -251,6 +257,13 @@ def assign_bank(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+
+    if current_user.role == UserRole.auditor:
+        raise HTTPException(
+            status_code=403,
+            detail="Auditor has read-only access and cannot assign banks"
+        )
+        
     # 1️⃣ Only buyer (corporate) can assign bank
     if current_user.role != UserRole.corporate:
         raise HTTPException(

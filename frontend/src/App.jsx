@@ -8,7 +8,9 @@ import Documents from "./pages/Documents";
 import LedgerEntries from "./pages/LedgerEntries";
 import Trades from "./pages/Trades";
 import AdminUsers from "./pages/AdminUsers";
-import IntegrityCheckPage from "./pages/IntegrityCheckPage"; 
+import IntegrityCheckPage from "./pages/IntegrityCheckPage";
+import RiskDashboard from "./pages/RiskDashboard";
+import Reports from "./pages/Reports"; // Add this import
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -49,20 +51,51 @@ export default function App() {
           element={<ProtectedRoute><LedgerEntries /></ProtectedRoute>}
         />
 
-        {/* Trades (ONLY ONE PAGE) */}
         <Route
           path="/trades"
           element={<ProtectedRoute><Trades /></ProtectedRoute>}
         />
 
+        {/* Reports - Available for all roles */}
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute 
+              allowedRoles={['admin', 'auditor', 'bank', 'corporate']}
+            >
+              <Reports />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Risk Dashboard - Available for all roles */}
+        <Route
+          path="/risk-dashboard"
+          element={
+            <ProtectedRoute 
+              allowedRoles={['admin', 'auditor', 'bank', 'corporate']}
+            >
+              <RiskDashboard />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Admin */}
         <Route
           path="/admin/users"
-          element={<ProtectedRoute><AdminUsers /></ProtectedRoute>}
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/admin/integrity-check"
-          element={<ProtectedRoute><IntegrityCheckPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <IntegrityCheckPage />
+            </ProtectedRoute>
+          }
         />
       </Routes>
     </BrowserRouter>

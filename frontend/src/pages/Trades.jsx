@@ -43,12 +43,12 @@ export default function Trades() {
   const [userRole, setUserRole] = useState("");
   const [userEmail, setUserEmail] = useState("");
 
-  // Create form
+  // Create form - UPDATED: Added trade_name field
   const [createForm, setCreateForm] = useState({
     seller_email: "",
     amount: "",
     currency: "USD",
-    description: "",
+    trade_name: "", // NEW FIELD: Trade Name
     product_details: "",
     payment_terms: "",
   });
@@ -57,12 +57,6 @@ export default function Trades() {
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [assignTradeId, setAssignTradeId] = useState("");
   const [bankEmail, setBankEmail] = useState("");
-
-  // Document upload form
-  const [showUploadForm, setShowUploadForm] = useState(false);
-  const [uploadTradeId, setUploadTradeId] = useState("");
-  const [documentType, setDocumentType] = useState("INVOICE");
-  const [documentUrl, setDocumentUrl] = useState("");
 
   // Get current user info
   useEffect(() => {
@@ -96,18 +90,7 @@ export default function Trades() {
         setUserRole(role);
         setUserEmail(email);
         
-        // If still no email, show alert
-        if (!email) {
-          setTimeout(() => {
-            const manualEmail = prompt(
-              "Email not found. Please enter your email:"
-            );
-            if (manualEmail) {
-              localStorage.setItem("email", manualEmail);
-              setUserEmail(manualEmail);
-            }
-          }, 500);
-        }
+        // REMOVED: No more email prompt
       } catch (err) {
         console.error("Error fetching user info:", err);
       }
@@ -143,7 +126,7 @@ export default function Trades() {
     }
   };
 
-  // Create trade
+  // Create trade - UPDATED: Include trade_name as description
   const handleCreate = async (e) => {
     e.preventDefault();
     
@@ -151,8 +134,8 @@ export default function Trades() {
       seller_email: createForm.seller_email,
       amount: parseFloat(createForm.amount),
       currency: createForm.currency,
-      description: createForm.description || null,
-      product_details: createForm.product_details || null,
+      description: createForm.trade_name || null, // Use trade_name as description
+      product_details: createForm.product_details ? JSON.parse(createForm.product_details) : null,
       payment_terms: createForm.payment_terms || null,
     };
 
@@ -163,7 +146,7 @@ export default function Trades() {
         seller_email: "", 
         amount: "", 
         currency: "USD", 
-        description: "", 
+        trade_name: "", 
         product_details: "", 
         payment_terms: "" 
       });
@@ -175,7 +158,7 @@ export default function Trades() {
     }
   };
 
-  // Assign bank - FIXED: Only allowed after documents uploaded
+  // Assign bank
   const handleAssignBank = async (e) => {
     e.preventDefault();
     if (!bankEmail) {
@@ -225,7 +208,6 @@ export default function Trades() {
         });
         
         alert("✓ Documents marked as uploaded! Buyer can now assign a bank.");
-        setShowUploadForm(false);
         fetchTrades();
       } catch (err) {
         alert(err.response?.data?.detail || "Failed to update documents status");
@@ -253,14 +235,16 @@ export default function Trades() {
     }
   };
 
-  // Check user permissions
+  // Check user permissions - UPDATED FOR AUDITOR
   const isBuyer = (trade) => {
+    if (isAuditor() || isAdmin()) return false; // Auditor/Admin don't act as buyer
     const currentEmail = userEmail.trim().toLowerCase();
     const tradeBuyerEmail = (trade.buyer_email || "").trim().toLowerCase();
     return currentEmail === tradeBuyerEmail;
   };
   
   const isSeller = (trade) => {
+    if (isAuditor() || isAdmin()) return false; // Auditor/Admin don't act as seller
     const currentEmail = userEmail.trim().toLowerCase();
     const tradeSellerEmail = (trade.seller_email || "").trim().toLowerCase();
     return currentEmail === tradeSellerEmail;
@@ -268,13 +252,15 @@ export default function Trades() {
   
   const isBankUser = () => userRole === "bank";
   const isAdmin = () => userRole === "admin";
+  const isAuditor = () => userRole === "auditor";
+  const isCorporate = () => userRole === "corporate";
 
-  // Get allowed actions for a trade - FIXED LOGIC
+  // Get allowed actions for a trade - UPDATED FOR AUDITOR (similar to admin)
   const getAllowedActions = (trade) => {
     const actions = [];
     const currentStatus = trade.status;
     
-    // Buyer actions - FIXED: Only assign bank after DOCUMENTS_UPLOADED
+    // Buyer actions
     if (isBuyer(trade)) {
       // Buyer can assign bank ONLY when documents are uploaded AND no bank assigned yet
       if (currentStatus === "DOCUMENTS_UPLOADED" && !trade.issuing_bank_id) {
@@ -304,7 +290,7 @@ export default function Trades() {
       }
     }
     
-    // Seller actions - FIXED: Separate accept and upload
+    // Seller actions
     if (isSeller(trade)) {
       // Seller can accept INITIATED trade
       if (currentStatus === "INITIATED") {
@@ -343,7 +329,7 @@ export default function Trades() {
       }
     }
     
-    // Bank actions - FIXED: Only if bank is assigned
+    // Bank actions
     if (isBankUser() && trade.issuing_bank_id) {
       // Bank can start review when documents are uploaded
       if (currentStatus === "DOCUMENTS_UPLOADED") {
@@ -387,6 +373,15 @@ export default function Trades() {
       }
     }
     
+    // Auditor/Admin actions: Can view history
+    if (isAuditor() || isAdmin()) {
+      actions.push({ 
+        label: "View History", 
+        action: "view_history", 
+        color: "bg-gray-600" 
+      });
+    }
+    
     return actions;
   };
 
@@ -401,7 +396,13 @@ export default function Trades() {
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   // Get status display name
@@ -409,20 +410,9 @@ export default function Trades() {
     return status.replace(/_/g, ' ');
   };
 
-  // Render action buttons
+  // Render action buttons - UPDATED FOR AUDITOR
   const renderActionButtons = (trade) => {
     const actions = getAllowedActions(trade);
-    
-    // If no email is set, show a warning
-    if (!userEmail) {
-      return (
-        <div className="mt-3 p-2 border border-red-300 bg-red-50 rounded">
-          <p className="text-xs text-red-600 mb-1">
-            User email not found. Please logout and login again.
-          </p>
-        </div>
-      );
-    }
     
     if (actions.length === 0) {
       return null;
@@ -441,6 +431,9 @@ export default function Trades() {
                 handleSellerAcceptTrade(trade.id);
               } else if (action.action === "upload_docs") {
                 handleUploadDocuments(trade.id);
+              } else if (action.action === "view_history") {
+                // Auditor/Admin clicks "View History"
+                fetchTradeHistory(trade.id);
               } else {
                 const message = `Are you sure you want to ${action.label.toLowerCase()}?`;
                 if (window.confirm(message)) {
@@ -457,7 +450,7 @@ export default function Trades() {
     );
   };
 
-  // Calculate trade statistics
+  // Calculate trade statistics - UPDATED FOR AUDITOR
   const getTradeStats = () => {
     const totalTrades = trades.length;
     const activeTrades = trades.filter(t => !["COMPLETED", "CANCELLED"].includes(t.status)).length;
@@ -468,14 +461,18 @@ export default function Trades() {
     const completedTrades = trades.filter(t => t.status === "COMPLETED").length;
     const cancelledTrades = trades.filter(t => t.status === "CANCELLED").length;
     
-    // For current user
-    const pendingSellerAction = trades.filter(t => 
+    // For current user (excluding auditor/admin for personal actions)
+    const pendingSellerAction = !isAuditor() && !isAdmin() ? trades.filter(t => 
       isSeller(t) && t.status === "INITIATED"
-    ).length;
+    ).length : 0;
     
-    const pendingBuyerAction = trades.filter(t => 
+    const pendingBuyerAction = !isAuditor() && !isAdmin() ? trades.filter(t => 
       isBuyer(t) && t.status === "DOCUMENTS_UPLOADED" && !t.issuing_bank_id
-    ).length;
+    ).length : 0;
+    
+    // Auditor/Admin specific stats
+    const disputedTrades = trades.filter(t => t.status === "DISPUTED").length;
+    const highValueTrades = trades.filter(t => t.amount > 100000).length;
     
     return {
       totalTrades,
@@ -487,8 +484,19 @@ export default function Trades() {
       completedTrades,
       cancelledTrades,
       pendingSellerAction,
-      pendingBuyerAction
+      pendingBuyerAction,
+      disputedTrades,
+      highValueTrades
     };
+  };
+
+  // Get page title based on role
+  const getPageTitle = () => {
+    if (isCorporate()) return "Your Trades";
+    if (isBankUser()) return "Bank Trades";
+    if (isAdmin()) return "All Trades";
+    if (isAuditor()) return "All Trades (Audit View)";
+    return "Trades";
   };
 
   const stats = getTradeStats();
@@ -500,10 +508,12 @@ export default function Trades() {
           <h1 className="text-2xl font-bold text-gray-800">Trade Finance</h1>
           <p className="text-gray-600 text-sm">
             Logged in as: <span className="font-semibold">{userEmail}</span> ({userRole})
+            {isAuditor() && <span className="ml-2 text-blue-600">👁️ Audit Mode</span>}
+            {isAdmin() && <span className="ml-2 text-purple-600">⚙️ Admin Mode</span>}
           </p>
         </div>
         <div className="flex gap-3">
-          {userRole === "corporate" && (
+          {isCorporate() && (
             <button
               onClick={() => setShowCreateForm(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-2"
@@ -526,8 +536,8 @@ export default function Trades() {
         </div>
       </div>
 
-      {/* Create Trade Modal */}
-      {showCreateForm && userRole === "corporate" && (
+      {/* Create Trade Modal - UPDATED: Added Trade Name field */}
+      {showCreateForm && isCorporate() && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -585,6 +595,47 @@ export default function Trades() {
                       <option value="GBP">GBP</option>
                       <option value="INR">INR</option>
                     </select>
+                  </div>
+                  {/* NEW: Trade Name Field */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Trade Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={createForm.trade_name}
+                      onChange={e => setCreateForm({...createForm, trade_name: e.target.value})}
+                      className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., Electronics Import - Q4 2024"
+                      required
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Product Details (Optional JSON)
+                    </label>
+                    <textarea
+                      value={createForm.product_details}
+                      onChange={e => setCreateForm({...createForm, product_details: e.target.value})}
+                      className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder='{"product": "Electronics", "quantity": 100, "specifications": {...}}'
+                      rows="2"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter JSON format product details (optional)
+                    </p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Terms (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={createForm.payment_terms}
+                      onChange={e => setCreateForm({...createForm, payment_terms: e.target.value})}
+                      className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., Net 30 days"
+                    />
                   </div>
                 </div>
                 <div className="flex gap-3 pt-4">
@@ -668,7 +719,9 @@ export default function Trades() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-xl font-semibold">Trade #{selectedTrade.id} - Activity History</h2>
+                  <h2 className="text-xl font-semibold">
+                    {selectedTrade.description ? `"${selectedTrade.description}" - ` : ''}Trade #{selectedTrade.id} - Activity History
+                  </h2>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                     <div className="bg-gray-50 p-3 rounded-lg">
                       <div className="text-xs text-gray-500">Buyer</div>
@@ -687,6 +740,12 @@ export default function Trades() {
                       <div className="font-medium">{getStatusDisplay(selectedTrade.status)}</div>
                     </div>
                   </div>
+                  {selectedTrade.description && (
+                    <div className="mt-3">
+                      <div className="text-xs text-gray-500">Trade Name</div>
+                      <div className="font-medium text-gray-800">{selectedTrade.description}</div>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => setShowHistory(false)}
@@ -751,8 +810,8 @@ export default function Trades() {
 
       {/* Main Content - Trades List */}
       <div className="space-y-6">
-        {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+        {/* Stats Summary - UPDATED FOR AUDITOR */}
+        <div className={`grid ${isAuditor() || isAdmin() ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-10' : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-8'} gap-4`}>
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-sm text-gray-500">Total</div>
             <div className="text-2xl font-bold">{stats.totalTrades}</div>
@@ -785,10 +844,22 @@ export default function Trades() {
             <div className="text-sm text-gray-500">Cancelled</div>
             <div className="text-2xl font-bold text-red-600">{stats.cancelledTrades}</div>
           </div>
+          {(isAuditor() || isAdmin()) && (
+            <>
+              <div className="bg-white p-4 rounded-lg shadow">
+                <div className="text-sm text-gray-500">Disputed</div>
+                <div className="text-2xl font-bold text-orange-600">{stats.disputedTrades}</div>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow">
+                <div className="text-sm text-gray-500">High Value</div>
+                <div className="text-2xl font-bold text-purple-600">{stats.highValueTrades}</div>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Pending Actions */}
-        {(stats.pendingSellerAction > 0 || stats.pendingBuyerAction > 0) && (
+        {/* Pending Actions - HIDDEN FOR AUDITOR/ADMIN */}
+        {!isAuditor() && !isAdmin() && (stats.pendingSellerAction > 0 || stats.pendingBuyerAction > 0) && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
             <h3 className="font-semibold text-blue-800 mb-2">Pending Actions</h3>
             <div className="flex flex-wrap gap-4">
@@ -812,14 +883,27 @@ export default function Trades() {
           </div>
         )}
 
-        {/* Trades Table */}
+        {/* Auditor/Admin Info Banner */}
+        {(isAuditor() || isAdmin()) && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+            <h3 className="font-semibold text-blue-800 mb-2">
+              {isAuditor() ? "Auditor Mode" : "Admin Mode"}
+            </h3>
+            <p className="text-sm text-gray-700">
+              {isAuditor() 
+                ? "You have view-only access to all trades. You can monitor trade activity but cannot modify trades."
+                : "You have administrative access to all trades. You can monitor trade activity and view detailed history."
+              }
+              Use the "View History" button to see detailed transaction history.
+            </p>
+          </div>
+        )}
+
+        {/* Trades Table - UPDATED: Show trade name/description */}
         <div className="bg-white rounded-xl shadow">
           <div className="p-6 border-b">
             <h2 className="text-lg font-semibold">
-              {userRole === "corporate" ? "Your Trades" : 
-               userRole === "bank" ? "Bank Trades" : 
-               userRole === "admin" ? "All Trades" : "Trades"} 
-              ({stats.totalTrades})
+              {getPageTitle()} ({stats.totalTrades})
             </h2>
           </div>
           
@@ -831,7 +915,7 @@ export default function Trades() {
           ) : stats.totalTrades === 0 ? (
             <div className="p-8 text-center text-gray-500">
               <p className="mb-3">No trades found</p>
-              {userRole === "corporate" && (
+              {isCorporate() && (
                 <button 
                   onClick={() => setShowCreateForm(true)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -847,6 +931,7 @@ export default function Trades() {
                   <tr>
                     <th className="p-4 text-left text-sm font-medium text-gray-600">ID</th>
                     <th className="p-4 text-left text-sm font-medium text-gray-600">Buyer → Seller</th>
+                    <th className="p-4 text-left text-sm font-medium text-gray-600">Trade Name</th>
                     <th className="p-4 text-left text-sm font-medium text-gray-600">Amount</th>
                     <th className="p-4 text-left text-sm font-medium text-gray-600">Status</th>
                     <th className="p-4 text-left text-sm font-medium text-gray-600">Created</th>
@@ -857,11 +942,11 @@ export default function Trades() {
                   {trades.map(trade => {
                     const isUserBuyer = isBuyer(trade);
                     const isUserSeller = isSeller(trade);
-                    const isUserInvolved = isUserBuyer || isUserSeller || isBankUser() || isAdmin();
+                    const isUserInvolved = isUserBuyer || isUserSeller || isBankUser() || isAdmin() || isAuditor();
                     
-                    // Status indicators
-                    const isWaitingSeller = isUserSeller && trade.status === "INITIATED";
-                    const isWaitingBuyer = isUserBuyer && trade.status === "DOCUMENTS_UPLOADED" && !trade.issuing_bank_id;
+                    // Status indicators (hidden for auditor/admin)
+                    const isWaitingSeller = !isAuditor() && !isAdmin() && isUserSeller && trade.status === "INITIATED";
+                    const isWaitingBuyer = !isAuditor() && !isAdmin() && isUserBuyer && trade.status === "DOCUMENTS_UPLOADED" && !trade.issuing_bank_id;
                     const isWaitingBank = isBankUser() && trade.issuing_bank_id && trade.status === "DOCUMENTS_UPLOADED";
                     
                     return (
@@ -890,6 +975,23 @@ export default function Trades() {
                                 ✓ Ready for bank review
                               </div>
                             )}
+                            {(isAuditor() || isAdmin()) && trade.issuing_bank_id && (
+                              <div className="mt-1 text-xs text-gray-500">
+                                Bank ID: {trade.issuing_bank_id}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="text-sm">
+                            <div className="font-medium text-gray-800">
+                              {trade.description || "Unnamed Trade"}
+                            </div>
+                            {trade.payment_terms && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                Terms: {trade.payment_terms}
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="p-4">
@@ -908,12 +1010,6 @@ export default function Trades() {
                         </td>
                         <td className="p-4">
                           <div className="flex flex-col gap-2">
-                            <button
-                              onClick={() => fetchTradeHistory(trade.id)}
-                              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm w-fit"
-                            >
-                              View History
-                            </button>
                             {isUserInvolved && renderActionButtons(trade)}
                           </div>
                         </td>
@@ -960,6 +1056,8 @@ export default function Trades() {
         <div className="mt-4 text-sm text-blue-700">
           <p><strong>Important:</strong> Buyer can only assign bank after documents are uploaded (DOCUMENTS_UPLOADED status)</p>
           <p className="text-xs text-blue-600 mt-1">Current user: {userEmail} ({userRole})</p>
+          {isAuditor() && <p className="text-xs text-blue-600 mt-1">👁️ Auditor: View-only access to all trades</p>}
+          {isAdmin() && <p className="text-xs text-purple-600 mt-1">⚙️ Admin: Full access to all trades</p>}
         </div>
       </div>
     </Layout>

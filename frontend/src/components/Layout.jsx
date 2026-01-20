@@ -1,4 +1,4 @@
-// layout.jsx 
+// layout.jsx - Updated with Reports link
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function Layout({ children }) {
@@ -21,6 +21,16 @@ export default function Layout({ children }) {
   // Get the correct dashboard path based on role
   const getDashboardPath = () => {
     return `/${role}/dashboard`;
+  };
+
+  // Check if user can access risk dashboard (all roles can access)
+  const canAccessRiskDashboard = () => {
+    return role === "admin" || role === "auditor" || role === "bank" || role === "corporate";
+  };
+
+  // Check if user can access reports (all roles can access)
+  const canAccessReports = () => {
+    return role === "admin" || role === "auditor" || role === "bank" || role === "corporate";
   };
 
   return (
@@ -51,6 +61,20 @@ export default function Layout({ children }) {
               <Link to="/documents" className={isActive("/documents")}>
                 Documents
               </Link>
+
+              {/* REPORTS LINK - Available for all roles */}
+              {canAccessReports() && (
+                <Link to="/reports" className={isActive("/reports")}>
+                  Reports
+                </Link>
+              )}
+
+              {/* RISK DASHBOARD LINK - Available for all roles */}
+              {canAccessRiskDashboard() && (
+                <Link to="/risk-dashboard" className={isActive("/risk-dashboard")}>
+                  Risk Dashboard
+                </Link>
+              )}
 
               {role === "admin" && (
                 <>

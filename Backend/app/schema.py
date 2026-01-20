@@ -205,3 +205,23 @@ class AlertResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class RiskScoreResponse(BaseModel):
+    user_id: int
+    score: float  # Changed from risk_score to score
+    risk_level: str
+    factors: Dict[str, Any]
+    last_calculated: datetime
+    expires_at: Optional[datetime]
+    
+    class Config:
+        from_attributes = True
+
+class RiskRecalculateRequest(BaseModel):
+    force: bool = False
+
+class RiskRecalculateAllRequest(BaseModel):
+    batch_size: int = 100
+
+

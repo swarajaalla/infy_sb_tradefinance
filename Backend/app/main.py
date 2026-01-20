@@ -8,7 +8,8 @@ from app.document_routes import router as docs_router
 from app.ledger_routes import router as ledger_router
 from app.trade_routes import router as trade_router
 from app.admin_routes import router as admin_router
-
+from app.risk_routes import router as risk_router
+from app.report_routes import router as report_router
 
 app = FastAPI(title="Trade Finance Explorer API")
 
@@ -27,7 +28,8 @@ app.include_router(docs_router)
 app.include_router(ledger_router)
 app.include_router(trade_router)
 app.include_router(admin_router)
-
+app.include_router(risk_router)
+app.include_router(report_router)
 
 @app.get("/")
 def home():
