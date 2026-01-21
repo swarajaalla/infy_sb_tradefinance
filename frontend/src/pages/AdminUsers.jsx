@@ -8,7 +8,19 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Add user form
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "corporate",
+    org_name: "",
+  });
+
   const role = localStorage.getItem("role");
+  const currentUserId = Number(localStorage.getItem("user_id"));
 
   const loadUsers = async () => {
     try {
@@ -25,6 +37,41 @@ export default function AdminUsers() {
   useEffect(() => {
     loadUsers();
   }, []);
+
+  // --------------------------------
+  // Add User
+  // --------------------------------
+  const createUser = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/users", form);
+      setShowForm(false);
+      setForm({
+        name: "",
+        email: "",
+        password: "",
+        role: "corporate",
+        org_name: "",
+      });
+      loadUsers();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Failed to create user");
+    }
+  };
+
+  // --------------------------------
+  // Delete User
+  // --------------------------------
+  const deleteUser = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
+
+    try {
+      await api.delete(`/users/${id}`);
+      loadUsers();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Failed to delete user");
+    }
+  };
 
   const filteredUsers = users.filter(
     (u) =>
@@ -49,63 +96,132 @@ export default function AdminUsers() {
   return (
     <Layout role={role}>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">User Management</h1>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-xl shadow">
-            <p className="text-gray-500 text-sm">Total Users</p>
-            <p className="text-2xl font-bold">{users.length}</p>
-          </div>
-        </div>
-
-        {/* Search + Refresh */}
-        <div className="flex flex-col md:flex-row gap-4 justify-between">
-          <input
-            type="text"
-            placeholder="Search by name, email or role..."
-            className="border rounded-lg px-4 py-2 w-full md:w-1/3 focus:ring-2 focus:ring-blue-500"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">User Management</h1>
 
           <button
-            onClick={loadUsers}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            onClick={() => setShowForm(!showForm)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
           >
-            Refresh
+            + Add User
           </button>
         </div>
 
+        {/* Add User Form */}
+        {showForm && (
+          <form
+            onSubmit={createUser}
+            className="bg-white p-6 rounded-xl shadow grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            <input
+              className="border p-2 rounded"
+              placeholder="Name"
+              required
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+            <input
+              className="border p-2 rounded"
+              placeholder="Email"
+              type="email"
+              required
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+            <input
+              className="border p-2 rounded"
+              placeholder="Password"
+              type="password"
+              required
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+            <input
+              className="border p-2 rounded"
+              placeholder="Organization"
+              required
+              value={form.org_name}
+              onChange={(e) => setForm({ ...form, org_name: e.target.value })}
+            />
+
+            <select
+              className="border p-2 rounded"
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+            >
+              <option value="corporate">Corporate</option>
+              <option value="bank">Bank</option>
+              <option value="auditor">Auditor</option>
+              <option value="admin">Admin</option>
+            </select>
+
+            <div className="flex gap-3">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded">
+                Create
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="bg-gray-300 px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search users..."
+          className="border rounded-lg px-4 py-2 w-full md:w-1/3"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
         {/* Table */}
         <div className="bg-white rounded-xl shadow overflow-x-auto">
-          {loading && <p className="p-6 text-gray-500">Loading users...</p>}
+          {loading && <p className="p-6">Loading...</p>}
           {error && <p className="p-6 text-red-500">{error}</p>}
 
           {!loading && filteredUsers.length > 0 && (
             <table className="min-w-full">
-              <thead className="bg-gray-100 sticky top-0">
+              <thead className="bg-gray-100">
                 <tr>
                   <th className="px-6 py-3 text-left">Name</th>
                   <th className="px-6 py-3 text-left">Email</th>
-                  <th className="px-6 py-3 text-left">Organization</th>
+                  <th className="px-6 py-3 text-left">Org</th>
                   <th className="px-6 py-3 text-left">Role</th>
+                  <th className="px-6 py-3 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((u) => (
                   <tr key={u.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium">{u.name}</td>
-                    <td className="px-6 py-3 text-sm text-gray-600">{u.email}</td>
+                    <td className="px-6 py-3">{u.name}</td>
+                    <td className="px-6 py-3">{u.email}</td>
                     <td className="px-6 py-3">{u.org_name}</td>
                     <td className="px-6 py-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${roleColor(
+                        className={`px-3 py-1 rounded-full text-xs ${roleColor(
                           u.role
                         )}`}
                       >
                         {u.role}
                       </span>
+                    </td>
+                    <td className="px-6 py-3">
+                      <button
+                        disabled={u.id === currentUserId}
+                        onClick={() => deleteUser(u.id)}
+                        className={`px-3 py-1 rounded text-white ${
+                          u.id === currentUserId
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-red-600 hover:bg-red-700"
+                        }`}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -114,7 +230,7 @@ export default function AdminUsers() {
           )}
 
           {!loading && filteredUsers.length === 0 && (
-            <p className="p-6 text-gray-500">No users found.</p>
+            <p className="p-6 text-gray-500">No users found</p>
           )}
         </div>
       </div>
