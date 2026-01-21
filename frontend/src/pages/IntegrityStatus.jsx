@@ -6,6 +6,7 @@ import PageSection from "../components/ui/PageSection";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Table, { THead, TBody, TR, TH, TD } from "../components/ui/Table";
+import { useAuth } from "../auth/AuthContext";
 
 const STATUS_BADGE = {
   PASSED: "bg-green-100 text-green-700",
@@ -17,6 +18,8 @@ const FILTERS = ["ALL", "PASSED", "FAILED", "PENDING"];
 
 const IntegrityStatus = () => {
   const toast = useToast();
+  const { user } = useAuth();
+  const role = user?.role?.toLowerCase();
 
   const [summary, setSummary] = useState(null);
   const [checks, setChecks] = useState([]);
@@ -46,8 +49,11 @@ const IntegrityStatus = () => {
   };
 
   useEffect(() => {
+  if (["auditor", "admin"].includes(role)) {
     loadAll();
-  }, []);
+  }
+}, [role]);
+
 
   const runIntegrity = async () => {
     try {
@@ -81,6 +87,43 @@ const IntegrityStatus = () => {
     filter === "ALL"
       ? checks
       : checks.filter((c) => c.status === filter);
+ 
+  if (["corporate", "bank"].includes(role)) {
+  return (
+    <PageSection>
+      <Card className="p-12 max-w-3xl bg-white/90 backdrop-blur-xl border border-slate-200 rounded-3xl shadow-xl">
+        <h2 className="text-2xl font-semibold text-slate-900">
+          System Integrity Oversight
+        </h2>
+
+        <p className="mt-4 text-slate-600 leading-relaxed">
+          Integrity monitoring ensures that all documents recorded on the
+          platform remain cryptographically consistent with their original
+          blockchain entries. These controls are part of the platform’s
+          compliance and audit framework.
+        </p>
+
+        <div className="mt-6 p-5 rounded-2xl bg-slate-50 border border-slate-200">
+          <p className="text-sm font-medium text-slate-800">
+            Your current role: <span className="capitalize">{role}</span>
+          </p>
+
+          <ul className="mt-3 text-sm text-slate-600 space-y-1 list-disc list-inside">
+            <li>Verify document authenticity using hash comparison</li>
+            <li>Review ledger history for your uploaded documents</li>
+            <li>Detect tampering at the document level</li>
+          </ul>
+        </div>
+
+        <p className="mt-6 text-sm text-slate-500">
+          System-wide integrity audits and remediation workflows are restricted
+          to Auditors and Administrators in accordance with compliance policy.
+        </p>
+      </Card>
+    </PageSection>
+  );
+}
+
 
   if (loading) {
     return <p className="text-slate-600">Loading integrity dashboard...</p>;

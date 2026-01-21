@@ -20,7 +20,7 @@ const Sidebar = () => {
      }`;
 
   return (
-    <aside className="w-64 min-h-screen bg-gradient-to-b from-[#0f172a] to-[#020617] shadow-2xl flex flex-col">
+    <aside className="w-64 h-full bg-gradient-to-b from-[#0f172a] to-[#020617] shadow-2xl flex flex-col">
       {/* Brand */}
       <div className="px-6 py-6 border-b border-slate-700/50">
         <h1 className="text-xl font-bold text-white tracking-wide">
@@ -51,18 +51,21 @@ const Sidebar = () => {
           Trades
         </NavLink>
         
-        {["admin", "auditor"].includes(role) && (
           <NavLink to="/integrity-status" className={linkClass}>
             Integrity Status
           </NavLink>
-        )}
+  
+        <NavLink to="/risk" className={linkClass}>
+        Risk Analytics
+        </NavLink>
 
-        {role === "admin" && (
+      {["admin", "corporate"].includes(role) && (
           <NavLink to="/users" className={linkClass}>
             Users
           </NavLink>
-        )}
+      )}
       </nav>
+
 
       {/* User info */}
       <div className="px-5 py-5 border-t border-slate-700/50">

@@ -7,8 +7,7 @@ from sqlmodel import Session
 from .database import get_session
 from . import schemas, crud
 from .auth import create_access_token, create_refresh_token, verify_password
-from .routers import users, documents, ledger,trades
-from .routers import integrity
+from .routers import users, documents, ledger,trades,integrity,risk,analytics
 
 
 app = FastAPI(title="Trade Finance Backend")
@@ -105,3 +104,5 @@ app.include_router(documents.router)
 app.include_router(ledger.router)
 app.include_router(trades.router)
 app.include_router(integrity.router)
+app.include_router(risk.router)
+app.include_router(analytics.router)

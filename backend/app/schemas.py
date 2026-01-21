@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional,List
 from pydantic import BaseModel, EmailStr
-from .models import Role,TradeStatus
+from .models import Role,TradeStatus,IntegrityStatus
 
 try:
     from pydantic import ConfigDict
@@ -157,11 +157,6 @@ class AssignBankRequest(BaseModel):
 # INTEGRITY SCHEMAS
 # ==================================================
 
-from typing import Optional, List
-from datetime import datetime
-from pydantic import BaseModel
-from .models import IntegrityStatus
-
 # Request to run integrity check
 class IntegrityRunRequest(BaseModel):
     document_ids: Optional[List[int]] = None
@@ -202,3 +197,20 @@ class IntegrityAlertRead(BaseModel):
 # Request to acknowledge an alert
 class IntegrityAlertAcknowledge(BaseModel):
     remarks: Optional[str] = None
+
+# ==================================================
+# RISK SCHEMAS
+# ==================================================
+
+class RiskScoreBase(BaseModel):
+    user_id: int
+    score: float
+    rationale: str | None = None
+
+
+class RiskScoreOut(RiskScoreBase):
+    id: int
+    last_updated: datetime
+
+    class Config:
+        from_attributes = True

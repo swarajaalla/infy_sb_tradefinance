@@ -1,10 +1,9 @@
-from datetime import datetime
+from datetime import datetime,timezone
 from enum import Enum
 from typing import Optional
 from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field,Relationship
 from sqlalchemy import Column, DateTime
-
 
 
 class Role(str, Enum):
@@ -157,3 +156,23 @@ class IntegrityAlert(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=False,
                          default=lambda: datetime.now(timezone.utc))
     )
+
+# ==================================================
+# RISK SCORE MODELS
+# ==================================================
+class RiskScore(SQLModel, table=True):
+    __tablename__ = "risk_scores"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", unique=True)
+
+    score: float
+    rationale: str | None = None
+    last_updated: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=True),
+            nullable=False,
+            default=lambda: datetime.now(timezone.utc),
+        )
+    )
+

@@ -14,6 +14,7 @@ import Ledger from "./pages/Ledger";
 
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Layout from "./components/Layout";
+import Risk from "./pages/Risk";
 
 const App = () => {
   return (
@@ -123,6 +124,16 @@ const App = () => {
   }
 />
 
+<Route
+  path="/risk"
+  element={
+    <ProtectedRoute>
+      <Layout title="Risk Analytics">
+        <Risk />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
 
       {/* ---------- FALLBACK ---------- */}
       <Route path="*" element={<Navigate to="/" />} />
