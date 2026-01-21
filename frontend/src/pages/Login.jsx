@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";  
+import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -10,48 +9,40 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    // 🔥 CLEAR PREVIOUS USER
-    localStorage.clear();
-        const formData = new URLSearchParams();
-    formData.append("username", username);
-    formData.append("password", password);
+    try {
+      localStorage.clear();
 
+      const formData = new URLSearchParams();
+      formData.append("username", username);
+      formData.append("password", password);
 
+      const res = await axios.post(
+        "http://127.0.0.1:8000/auth/login",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
 
-const res = await axios.post(
-  "http://127.0.0.1:8000/auth/login",
-  formData,
-  {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-  }
-);
+      const token = res.data.access_token;
+      localStorage.setItem("access_token", token);
 
+      const decoded = jwtDecode(token);
+      localStorage.setItem("user_id", decoded.user_id || decoded.id);
 
-const token = res.data.access_token;
-   
-// ✅ STORE TOKEN
-localStorage.setItem("access_token", token);
+      localStorage.setItem("username", decoded.sub);
+      localStorage.setItem("role", decoded.role);
 
-// ✅ DECODE TOKEN
-const decoded = jwtDecode(token);
-
-// ✅ STORE USER INFO
-localStorage.setItem("username", decoded.sub);
-localStorage.setItem("role", decoded.role);
-
-navigate("/dashboard");
-
-  } catch (err) {
-    console.error(err);
-    alert("❌ Invalid username or password");
-  }
-};
-
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Invalid username or password");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -68,7 +59,7 @@ navigate("/dashboard");
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="w-full p-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full p-2 mb-4 border rounded"
           required
         />
 
@@ -77,18 +68,17 @@ navigate("/dashboard");
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-6 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full p-2 mb-6 border rounded"
           required
         />
 
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
+          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
         >
           Login
         </button>
 
-        {/* Register Link */}
         <p className="text-center text-sm text-gray-600 mt-4">
           Don’t have an account?{" "}
           <Link

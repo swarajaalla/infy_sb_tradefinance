@@ -1,32 +1,26 @@
-import axios from "axios";
+import api from "../api/axios";
 
-const API_URL = "http://127.0.0.1:8000";
-
-const authHeader = () => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-  },
-});
+export const listTrades = () => api.get("/trades");
 
 export const createTrade = (data) =>
-  axios.post(`${API_URL}/trades/`, data, authHeader());
+  api.post("/trades", null, { params: data });
 
-export const listTrades = () =>
-  axios.get(`${API_URL}/trades/`, authHeader());
+export const confirmTrade = (tradeId) =>
+  api.post(`/trades/${tradeId}/confirm`);
 
-export const updateTradeStatus = (tradeId, status) =>
-  axios.put(
-    `${API_URL}/trades/${tradeId}/status`,
-    { status },
-    authHeader()
-  );
+export const assignBank = (tradeId, bankId) =>
+  api.post(`/trades/${tradeId}/assign-bank`, null, {
+    params: { bank_id: bankId },
+  });
 
-export const assignBankToTrade = (tradeId, bankId) =>
-  axios.post(
-    `${API_URL}/trades/${tradeId}/assign-bank`,
-    { bank_id: bankId },
-    authHeader()
-  );
+export const startBankReview = (tradeId) =>
+  api.post(`/trades/${tradeId}/bank/start-review`);
 
-export const getTradeById = (tradeId) =>
-  axios.get(`${API_URL}/trades/${tradeId}`, authHeader());
+export const approveTrade = (tradeId) =>
+  api.post(`/trades/${tradeId}/bank/approve`);
+
+export const releasePayment = (tradeId) =>
+  api.post(`/trades/${tradeId}/bank/release-payment`);
+
+export const completeTrade = (tradeId) =>
+  api.post(`/trades/${tradeId}/complete`);

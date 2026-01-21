@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
+import { useSearchParams } from "react-router-dom";
 
 export default function DocumentUpload({ editMode = false, document = null }) {
   const [docType, setDocType] = useState("");
   const [docNumber, setDocNumber] = useState("");
   const [file, setFile] = useState(null);
+
+  // ✅ READ trade_id from URL
+  const [searchParams] = useSearchParams();
+  const tradeId = searchParams.get("trade_id");
 
   // 🔹 Prefill form when editing
   useEffect(() => {
@@ -17,12 +22,18 @@ export default function DocumentUpload({ editMode = false, document = null }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!tradeId) {
+      alert("❌ Trade ID missing");
+      return;
+    }
+
     if (!file && !editMode) {
       alert("Please select a file");
       return;
     }
 
     const formData = new FormData();
+    formData.append("trade_id", tradeId); // ✅ REQUIRED
     formData.append("doc_type", docType);
     formData.append("doc_number", docNumber);
 
@@ -32,14 +43,14 @@ export default function DocumentUpload({ editMode = false, document = null }) {
 
     try {
       if (editMode) {
-        // 🔁 UPDATE EXISTING DOCUMENT
+        // 🔁 UPDATE DOCUMENT
         await api.put(
           `/documents/${document.id}/update`,
           formData
         );
         alert("✅ Document updated successfully");
       } else {
-        // ➕ NEW UPLOAD
+        // ➕ UPLOAD DOCUMENT
         await api.post("/documents/upload", formData);
         alert("✅ Document uploaded successfully");
       }
@@ -53,7 +64,6 @@ export default function DocumentUpload({ editMode = false, document = null }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-
       {/* DOCUMENT TYPE */}
       <select
         className="w-full border p-2 rounded"
@@ -77,14 +87,14 @@ export default function DocumentUpload({ editMode = false, document = null }) {
         required
       />
 
-      {/* FILE INPUT */}
+      {/* FILE */}
       <input
         type="file"
         className="w-full border p-2 rounded"
         onChange={(e) => setFile(e.target.files[0])}
       />
 
-      {/* SUBMIT BUTTON */}
+      {/* SUBMIT */}
       <button
         type="submit"
         className={`px-4 py-2 rounded text-white ${

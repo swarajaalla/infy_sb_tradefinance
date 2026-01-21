@@ -1,35 +1,47 @@
 import { useState } from "react";
-import { createTrade } from "../services/tradeApi";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import Layout from "../components/Layout";
+import toast from "react-hot-toast";
 
 export default function CreateTrade() {
   const [sellerId, setSellerId] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("INR");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     try {
-      await createTrade({
-        seller_id: Number(sellerId),
-        amount: Number(amount),
-        currency: currency,
-      });
+  await api.post("/trades", null, {
+    params: {
+      seller_id: Number(sellerId),
+      amount: Number(amount),
+      currency,
+    },
+  });
 
-      setMessage("✅ Trade created successfully");
-      setSellerId("");
-      setAmount("");
-    } catch (error) {
-      setMessage("❌ Failed to create trade");
-      console.error(error);
-    }
+  toast.success("Trade created successfully");
+  navigate("/trades");
+
+} catch (err) {
+  console.error(err);
+  toast.error("Failed to create trade");
+}
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-6 rounded shadow-md w-96">
-        <h2 className="text-xl font-bold mb-4">Create Trade</h2>
+    <Layout>
+      <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow">
+        <h2 className="text-2xl font-bold mb-4">Create New Trade</h2>
+
+        {error && (
+          <p className="text-red-600 mb-3">{error}</p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -37,8 +49,8 @@ export default function CreateTrade() {
             placeholder="Seller ID"
             value={sellerId}
             onChange={(e) => setSellerId(e.target.value)}
-            required
             className="w-full border p-2 rounded"
+            required
           />
 
           <input
@@ -46,32 +58,27 @@ export default function CreateTrade() {
             placeholder="Amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            required
             className="w-full border p-2 rounded"
+            required
           />
 
-          <select
+          <input
+            type="text"
+            placeholder="Currency"
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
             className="w-full border p-2 rounded"
-          >
-            <option value="INR">INR</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-          </select>
+            required
+          />
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+            className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
           >
             Create Trade
           </button>
         </form>
-
-        {message && (
-          <p className="mt-4 text-center font-medium">{message}</p>
-        )}
       </div>
-    </div>
+    </Layout>
   );
 }

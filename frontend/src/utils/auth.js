@@ -1,12 +1,19 @@
-export function isLoggedIn() {
-  return !!localStorage.getItem("token");
-}
+export const getUser = () => {
+  const token = localStorage.getItem("access_token");
+  const id = localStorage.getItem("user_id");
+  const username = localStorage.getItem("username");
+  const role = localStorage.getItem("role");
 
-export function getRole() {
-  return localStorage.getItem("role");
-}
+  if (!token || !id) return null;
 
-export function logout() {
+  return {
+    id: Number(id),
+    username,
+    role,
+    token,
+  };
+};
+
+export const logout = () => {
   localStorage.clear();
-  window.location.href = "/";
-}
+};

@@ -1,59 +1,116 @@
 import { useEffect, useState } from "react";
-import { getIntegrityAlerts } from "../services/integrityApi";
+import Layout from "../components/Layout";
+import {
+  getIntegrityStatus,
+  runIntegrityCheck,
+} from "../services/integrityApi";
 
 export default function IntegrityAlerts() {
-  const [alerts, setAlerts] = useState([]);
+  const [data, setData] = useState([]);
+  const [summary, setSummary] = useState({});
+  const [filter, setFilter] = useState("ALL");
 
   useEffect(() => {
-    async function loadAlerts() {
-      const res = await getIntegrityAlerts();
-      setAlerts(res.data);
-    }
-    loadAlerts();
+    loadData();
   }, []);
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h2 className="text-2xl font-bold mb-4 text-red-600">
-        🚨 Integrity Alerts
-      </h2>
+  const loadData = async () => {
+    const res = await getIntegrityStatus();
+    setData(res.data.records);
+    setSummary(res.data.summary);
+  };
 
-      <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="p-2 border">Document ID</th>
-              <th className="p-2 border">Reason</th>
-              <th className="p-2 border">Details</th>
-              <th className="p-2 border">Detected At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {alerts.length === 0 ? (
-              <tr>
-                <td colSpan="4" className="p-4 text-center">
-                  ✅ No integrity issues found
-                </td>
-              </tr>
-            ) : (
-              alerts.map((alert) => (
-                <tr key={alert.id} className="bg-red-50">
-                  <td className="p-2 border">{alert.document_id}</td>
-                  <td className="p-2 border font-semibold text-red-600">
-                    {alert.meta_data?.reason}
-                  </td>
-                  <td className="p-2 border text-sm">
-                    {JSON.stringify(alert.meta_data)}
-                  </td>
-                  <td className="p-2 border">
-                    {new Date(alert.created_at).toLocaleString()}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+  const filteredData =
+    filter === "ALL"
+      ? data
+      : data.filter((d) => d.status === filter);
+
+  return (
+    <Layout>
+      <h1 className="text-2xl font-bold mb-6">Integrity Status</h1>
+
+      {/* SUMMARY */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <Card title="Total Checks" value={summary.total} />
+        <Card title="Passed" value={summary.passed} color="green" />
+        <Card title="Failed" value={summary.failed} color="red" />
+        <Card title="Pending" value={summary.pending} color="yellow" />
       </div>
+
+      {/* FILTER + ACTION */}
+      <div className="flex justify-between mb-4">
+        <div className="space-x-2">
+          {["ALL", "PASSED", "FAILED", "PENDING"].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1 rounded ${
+                filter === f
+                  ? "bg-indigo-600 text-white"
+                  : "border"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={runIntegrityCheck}
+          className="bg-indigo-600 text-white px-4 py-2 rounded"
+        >
+          Run Integrity Check
+        </button>
+      </div>
+
+      {/* TABLE */}
+      <table className="w-full border">
+        <thead className="bg-gray-100">
+          <tr>
+            <th>ID</th>
+            <th>Document</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Stored Hash</th>
+            <th>Computed Hash</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredData.map((row) => (
+            <tr key={row.id} className="border-t">
+              <td>{row.id}</td>
+              <td>{row.document_id}</td>
+              <td>{row.type}</td>
+              <td>
+                <span className={`px-2 py-1 rounded text-sm ${
+                  row.status === "PASSED"
+                    ? "bg-green-100 text-green-700"
+                    : row.status === "FAILED"
+                    ? "bg-red-100 text-red-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}>
+                  {row.status}
+                </span>
+              </td>
+              <td className="truncate max-w-xs">{row.stored_hash}</td>
+              <td className="truncate max-w-xs">{row.computed_hash || "-"}</td>
+              <td>{new Date(row.timestamp).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Layout>
+  );
+}
+
+function Card({ title, value, color }) {
+  return (
+    <div className="bg-white shadow rounded p-4">
+      <p className="text-gray-500">{title}</p>
+      <p className={`text-2xl font-bold text-${color || "black"}-600`}>
+        {value || 0}
+      </p>
     </div>
   );
 }
