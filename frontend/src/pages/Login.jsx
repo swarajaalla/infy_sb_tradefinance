@@ -1,94 +1,110 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
+import api from "../services/api";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-
+  const handleLogin = async () => {
     try {
-      localStorage.clear();
-
-      const formData = new URLSearchParams();
-      formData.append("username", username);
-      formData.append("password", password);
-
-      const res = await axios.post(
-        "http://127.0.0.1:8000/auth/login",
-        formData,
+      const res = await api.post(
+        "/auth/login",
+        {
+          email: email.trim(),
+          password: password
+        },
         {
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
+            "Content-Type": "application/json"
+          }
         }
       );
 
-      const token = res.data.access_token;
-      localStorage.setItem("access_token", token);
-
-      const decoded = jwtDecode(token);
-      localStorage.setItem("user_id", decoded.user_id || decoded.id);
-
-      localStorage.setItem("username", decoded.sub);
-      localStorage.setItem("role", decoded.role);
-
+      localStorage.setItem("token", res.data.access_token);
       navigate("/dashboard");
+
     } catch (err) {
-      console.error(err);
-      alert("❌ Invalid username or password");
+      console.error("LOGIN ERROR:", err.response?.data || err);
+
+      if (err.response?.status === 401) {
+        alert("Invalid credentials");
+      } else if (err.response?.status === 422) {
+        alert("Invalid request format");
+      } else {
+        alert("Login failed");
+      }
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white p-8 rounded-xl shadow-lg w-96"
-      >
-        <h2 className="text-3xl font-bold text-center mb-6">Login</h2>
+   return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
 
-        <label className="block text-sm font-medium mb-1">
-          Username or Email
-        </label>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
-          required
-        />
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-semibold text-slate-800">
+            Sign In
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Access your account
+          </p>
+        </div>
 
-        <label className="block text-sm font-medium mb-1">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-6 border rounded"
-          required
-        />
+        {/* Email */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-slate-600 mb-1">
+            Email
+          </label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-slate-600 focus:border-slate-600"
+          />
+        </div>
 
+        {/* Password */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-slate-600 mb-1">
+            Password
+          </label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-slate-600 focus:border-slate-600"
+          />
+        </div>
+
+        {/* Button */}
         <button
-          type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+          onClick={handleLogin}
+          className="w-full bg-slate-800 hover:bg-slate-900
+                     text-white font-medium py-2.5 rounded-lg
+                     transition duration-200"
         >
           Login
         </button>
 
-        <p className="text-center text-sm text-gray-600 mt-4">
+        {/* Footer */}
+        <p className="text-sm text-slate-600 mt-6 text-center">
           Don’t have an account?{" "}
-          <Link
-            to="/signup"
-            className="text-indigo-600 font-semibold hover:underline"
+          <span
+            onClick={() => navigate("/register")}
+            className="text-slate-800 font-medium cursor-pointer hover:underline"
           >
             Register
-          </Link>
+          </span>
         </p>
-      </form>
+
+      </div>
     </div>
   );
+
 }

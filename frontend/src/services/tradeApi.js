@@ -1,26 +1,30 @@
-import api from "../api/axios";
+import api from "./api";
 
-export const listTrades = () => api.get("/trades");
+export const getTrades = () => api.get("/trades/");
 
 export const createTrade = (data) =>
-  api.post("/trades", null, { params: data });
+  api.post("/trades", data);
 
-export const confirmTrade = (tradeId) =>
-  api.post(`/trades/${tradeId}/confirm`);
+export const getTradeById = (id) =>
+  api.get(`/trades/${id}`);
 
-export const assignBank = (tradeId, bankId) =>
-  api.post(`/trades/${tradeId}/assign-bank`, null, {
-    params: { bank_id: bankId },
+export const updateTradeStatus = (id, data) =>
+  api.patch(`/trades/${id}/status`, data);
+
+export const assignBank = (id, bankId) =>
+  api.post(`/trades/${id}/assign`, { bank_id: bankId });
+export const getBanks = () => {
+  const token = localStorage.getItem("token");
+
+  return api.get("/trades/banks", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
+};
 
-export const startBankReview = (tradeId) =>
-  api.post(`/trades/${tradeId}/bank/start-review`);
 
-export const approveTrade = (tradeId) =>
-  api.post(`/trades/${tradeId}/bank/approve`);
-
-export const releasePayment = (tradeId) =>
-  api.post(`/trades/${tradeId}/bank/release-payment`);
-
-export const completeTrade = (tradeId) =>
-  api.post(`/trades/${tradeId}/complete`);
+export const assignBankToTrade = (id, bankEmail) =>
+  api.post(`/trades/${id}/assign-bank`, {
+    bank_email: bankEmail,
+  });

@@ -1,59 +1,57 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-/* AUTH */
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-
-/* CORE */
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import Documents from "./pages/Documents";
-import IntegrityAlerts from "./pages/IntegrityAlerts";
+import UserMe from "./pages/UserMe";
+import UsersList from "./pages/UsersList";
+import RiskManagement from "./pages/RiskManagement";
 
-/* LEDGER */
+import UploadDocument from "./pages/UploadDocument";
+import DocumentsList from "./pages/DocumentsList";
+import UpdateDocument from "./pages/UpdateDocument";
 import LedgerExplorer from "./pages/LedgerExplorer";
-import LedgerTimeline from "./pages/LedgerTimeline";
 
-/* TRADES */
-import MyTrades from "./pages/MyTrades";
-import CreateTrade from "./pages/CreateTrade";
+import Layout from "./components/Layout";
+
+import TradesList from "./pages/TradesList";
 import TradeDetails from "./pages/TradeDetails";
-
-
-/* DOCUMENT UPLOAD (TRADE FLOW) */
-import UploadDocuments from "./pages/UploadDocuments";
-import RiskDashboard from "./pages/RiskDashboard";
+import CreateTrade from "./pages/CreateTrade";
 
 export default function App() {
   return (
-    
+    <BrowserRouter>
       <Routes>
         {/* DEFAULT */}
         <Route path="/" element={<Navigate to="/login" />} />
 
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/register" element={<Register />} />
 
-        {/* DASHBOARD */}
-        <Route path="/dashboard" element={<Dashboard />} />
+        {/* APP */}
+        <Route element={<Layout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* DOCUMENTS */}
-        <Route path="/documents" element={<Documents />} />
-        <Route path="/documents/upload/:tradeId" element={<UploadDocuments />} />
+          <Route path="/users/me" element={<UserMe />} />
+          <Route path="/users" element={<UsersList />} />
 
-        {/* INTEGRITY */}
-        <Route path="/integrity-alerts" element={<IntegrityAlerts />} />
+          <Route path="/documents" element={<DocumentsList />} />
+          <Route path="/documents/upload" element={<UploadDocument />} />
+          <Route path="/documents/update/:id" element={<UpdateDocument />} />
 
-        {/* LEDGER */}
-        <Route path="/ledger/:id/explorer" element={<LedgerExplorer />} />
-        <Route path="/ledger/:id/timeline" element={<LedgerTimeline />} />
+          <Route path="/ledger/:id" element={<LedgerExplorer />} />
+          <Route path="/risk" element={<RiskManagement />} />
 
-        {/* 🔥 TRADES (ORDER MATTERS) */}
-        <Route path="/trades/new" element={<CreateTrade />} />
-        <Route path="/trades/:id" element={<TradeDetails />} />
-        <Route path="/trades" element={<MyTrades />} />
-        <Route path="/risk" element={<RiskDashboard />} />
+          {/* 🔑 TRADES */}
+          <Route path="/trades" element={<TradesList />} />
+          <Route path="/trades/create" element={<CreateTrade />} />
+          <Route path="/trades/:id" element={<TradeDetails />} />
+        </Route>
+
+        {/* FALLBACK */}
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
-    
+    </BrowserRouter>
   );
 }

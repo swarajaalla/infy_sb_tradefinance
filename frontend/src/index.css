@@ -2,10 +2,4 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom button */
-.btn-primary {
-  background-color: #4f46e5;
-  color: white;
-  padding: 6px 14px;
-  border-radius: 6px;
-}
+

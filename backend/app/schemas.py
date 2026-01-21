@@ -1,27 +1,22 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, validator
 
-class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
+ALLOWED_ROLES = {"ADMIN", "CORPORATE", "BANK", "AUDITOR"}
+
+class RegisterSchema(BaseModel):
+    name: str
+    email: str
     password: str
-    role: Optional[str] = "corporate"
-    org_name: Optional[str] = None
-
-class UserLogin(BaseModel):
-    username: str
-    password: str
-
-class UserResponse(BaseModel):
-    id: int
-    username: str
-    email: EmailStr
     role: str
-    org_name: Optional[str] = None
+    org_name: str
 
-    class Config:
-        orm_mode = True
+    @validator("role")
+    def validate_role(cls, v):
+        v = v.upper()
+        if v not in ALLOWED_ROLES:
+            raise ValueError("Invalid role")
+        return v
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+
+class LoginSchema(BaseModel):
+    email: str
+    password: str
