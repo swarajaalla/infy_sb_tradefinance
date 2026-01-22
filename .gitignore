@@ -1,9 +1,21 @@
-node_modules/
-frontend/node_modules/
+# Python
 .venv/
 backend/.venv/
 __pycache__/
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/.vite/
+
+# Env / logs
 .env
 *.log
-dist/
-build/
+
+# Archives / docs (optional but recommended)
+*.zip
+*.pptx
+backend/.env
+.env
+__pycache__/
+*.pyc

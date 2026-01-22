@@ -1,0 +1,136 @@
+/* 1. Global Reset & Advanced Typography Rendering */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --primary-bg: #f8fafc;
+  --sidebar-bg: #0f172a;
+  --accent-blue: #3b82f6;
+  --accent-indigo: #6366f1;
+  --accent-purple: #a855f7;
+  --accent-pink: #ec4899;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--primary-bg);
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden; /* Ensures independent scrolling for sidebar and main content */
+}
+
+/* 2. Professional Scrollbar System */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.custom-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* 3. Role-Based Dynamic Animations */
+@keyframes fadeInSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* Apply staggered entry to Dashboard cards */
+main, .main-content-animate {
+  animation: fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 4. The Interactive Design System */
+
+/* Animated Gradient Header */
+.header-gradient-animate {
+  background: linear-gradient(-45deg, var(--accent-indigo), var(--accent-purple), var(--accent-pink), var(--accent-blue));
+  background-size: 400% 400%;
+  animation: gradientMove 12s ease infinite;
+}
+
+/* Glassmorphism Refinement */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+/* Card Interaction Logic */
+.stat-card-transition {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.stat-card-transition:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+}
+
+/* Sidebar Active Indicator */
+.sidebar-active-link {
+  @apply bg-blue-600 text-white shadow-lg shadow-blue-500/30;
+  position: relative;
+}
+
+.sidebar-active-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  height: 20px;
+  width: 4px;
+  background: white;
+  border-radius: 0 4px 4px 0;
+}
+
+/* 5. Functional Button & Input Styling */
+.btn-glow-blue:hover {
+  box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+input:focus {
+  background-color: #ffffff !important;
+  border-color: var(--accent-blue) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* Auth Page Enhancements */
+.auth-gradient-bg {
+  background: radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.08), transparent),
+              radial-gradient(circle at 90% 90%, rgba(236, 72, 153, 0.08), transparent);
+}
+
+.animate-pulse-slow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
