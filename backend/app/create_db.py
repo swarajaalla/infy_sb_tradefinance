@@ -7,11 +7,18 @@ def seed():
     init_db()
 
     users_to_create = [
-        {"name": "Deepu", "email": "deepu@gmail.com", "password": "deepu123", "role": Role.admin, "org_name": "orgA"},
-        {"name": "Bunny", "email": "bunny@gmail.com", "password": "bunny123", "role": Role.bank, "org_name": "orgB"},
-        {"name": "Charlie", "email": "charlie@gmail.com", "password": "charlie123", "role": Role.corporate, "org_name": "orgC"},
-        {"name": "Siva", "email": "siva@gmail.com", "password": "siva123", "role": Role.auditor, "org_name": "orgD"},
+    {
+        "name": "Admin",
+        "email": "admin@system.com",
+        "password": "admin123",
+        "role": Role.admin,
+        "org_name": None  # or "SYSTEM"
+    },
+    {"name": "Bunny", "email": "bunny@gmail.com", "password": "bunny123", "role": Role.bank, "org_name": "orgB"},
+    {"name": "Charlie", "email": "charlie@gmail.com", "password": "charlie123", "role": Role.corporate, "org_name": "orgC"},
+    {"name": "Siva", "email": "siva@gmail.com", "password": "siva123", "role": Role.auditor, "org_name": "orgD"},
     ]
+
 
     with Session(engine) as session:
         for u in users_to_create:

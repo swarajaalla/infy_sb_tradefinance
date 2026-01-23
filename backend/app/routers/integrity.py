@@ -5,6 +5,7 @@ from ..database import get_session
 from ..auth import get_current_user
 from ..models import User, Role
 from .. import crud
+from app.tasks import run_integrity_task
 
 router = APIRouter(prefix="/integrity", tags=["Integrity"])
 
@@ -12,22 +13,24 @@ router = APIRouter(prefix="/integrity", tags=["Integrity"])
 # --------------------------------------------------
 # RUN INTEGRITY CHECK (ADMIN / AUDITOR ONLY)
 # --------------------------------------------------
+
 @router.post("/run")
 def run_integrity_check(
     data: IntegrityRunRequest,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if current_user.role not in {Role.admin.value, Role.auditor.value}:
-        raise HTTPException(403, "Only admin or auditor can run integrity checks")
+    if current_user.role != Role.admin.value:
+        raise HTTPException(403, "Only admin can run integrity checks")
 
-    result = crud.run_integrity_check(
-        session=session,
-        actor=current_user,
+    run_integrity_task.delay(
+        actor_id=current_user.id,
         document_ids=data.document_ids,
     )
 
-    return result
+    return {
+        "message": "Integrity check started in background"
+    }
 
 # --------------------------------------------------
 # GET INTEGRITY CHECK RECORDS (ADMIN / AUDITOR)
@@ -69,8 +72,19 @@ def get_integrity_alerts(
     if current_user.role not in {Role.admin.value, Role.auditor.value}:
         raise HTTPException(403, "Access denied")
 
-    return crud.list_integrity_alerts(session)
+    alerts = crud.list_integrity_alerts(session)
 
+    if not alerts:
+        return {
+            "message": "All integrity alerts have been acknowledged. No active issues.",
+            "alerts": []
+        }
+
+    return {
+        "message": "Active integrity alerts found",
+        "count": len(alerts),
+        "alerts": alerts
+    }
 
 # --------------------------------------------------
 # ACKNOWLEDGE ALERT (ADMIN / AUDITOR)
@@ -81,7 +95,7 @@ def acknowledge_alert(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if current_user.role not in {Role.admin.value, Role.auditor.value}:
+    if current_user.role != Role.admin.value:
         raise HTTPException(403, "Access denied")
 
     alert = crud.acknowledge_integrity_alert(

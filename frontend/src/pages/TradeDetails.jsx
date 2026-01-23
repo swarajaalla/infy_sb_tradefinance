@@ -8,11 +8,13 @@ const STATUS_COLORS = {
   SELLER_CONFIRMED: "border-blue-500",
   DOCUMENTS_UPLOADED: "border-indigo-500",
   BANK_ASSIGNED: "border-purple-500",
+  SHIPPED: "border-cyan-500",
   BANK_REVIEWING: "border-yellow-500",
   BANK_APPROVED: "border-green-500",
   PAYMENT_RELEASED: "border-emerald-500",
   COMPLETED: "border-green-700",
   CANCELLED: "border-red-500",
+  DISPUTED: "border-orange-500",
 };
 
 const TradeDetails = () => {
@@ -23,7 +25,6 @@ const TradeDetails = () => {
   const [trade, setTrade] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ---------------- LOAD TRADE ----------------
   const loadTrade = async () => {
     try {
       setLoading(true);
@@ -40,9 +41,7 @@ const TradeDetails = () => {
     loadTrade();
   }, [id]);
 
-  if (loading) {
-    return <p className="text-slate-600">Loading trade...</p>;
-  }
+  if (loading) return <p className="text-slate-600">Loading trade...</p>;
 
   if (!trade) {
     return (
@@ -54,46 +53,27 @@ const TradeDetails = () => {
 
   return (
     <div className="space-y-8">
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">
           Trade #{trade.trade_number}
         </h1>
-
-        <button
-          onClick={() => navigate(-1)}
-          className="btn btn-outline"
-        >
+        <button onClick={() => navigate(-1)} className="btn btn-outline">
           ← Back
         </button>
       </div>
 
-      {/* TRADE INFO */}
       <div className="bg-white p-6 rounded shadow space-y-2">
-        <p>
-          <b>Description:</b> {trade.description}
-        </p>
-        <p>
-          <b>Buyer:</b> {trade.buyer?.org_name}
-        </p>
-        <p>
-          <b>Seller:</b> {trade.seller?.org_name}
-        </p>
-        <p>
-          <b>Bank:</b> {trade.bank?.org_name || "Not assigned"}
-        </p>
-        <p>
-          <b>Amount:</b> {trade.amount} {trade.currency}
-        </p>
+        <p><b>Description:</b> {trade.description}</p>
+        <p><b>Buyer:</b> {trade.buyer?.org_name}</p>
+        <p><b>Seller:</b> {trade.seller?.org_name}</p>
+        <p><b>Bank:</b> {trade.bank?.org_name || "Not assigned"}</p>
+        <p><b>Amount:</b> {trade.amount} {trade.currency}</p>
         <p>
           <b>Current Status:</b>{" "}
-          <span className="font-semibold">
-            {trade.status}
-          </span>
+          <span className="font-semibold">{trade.status}</span>
         </p>
       </div>
 
-      {/* STATUS TIMELINE */}
       <div className="bg-white p-6 rounded shadow">
         <h2 className="text-lg font-semibold mb-4">
           Trade Status Timeline
@@ -101,21 +81,15 @@ const TradeDetails = () => {
 
         <div className="space-y-4">
           {trade.status_history.length === 0 ? (
-            <p className="text-slate-500">
-              No status history available
-            </p>
+            <p className="text-slate-500">No history available</p>
           ) : (
             trade.status_history.map((s) => (
               <div
                 key={s.id}
-                className={`border-l-4 pl-4 ${
-                  STATUS_COLORS[s.status] || "border-gray-400"
-                }`}
+                className={`border-l-4 pl-4 ${STATUS_COLORS[s.status] || "border-gray-400"}`}
               >
                 <p className="font-semibold">{s.status}</p>
-                <p className="text-sm text-slate-600">
-                  {s.remarks || "—"}
-                </p>
+                <p className="text-sm text-slate-600">{s.remarks || "—"}</p>
                 <p className="text-xs text-slate-500">
                   Changed by User ID: {s.changed_by_id}
                 </p>

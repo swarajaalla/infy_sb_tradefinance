@@ -70,16 +70,26 @@ def upload_document(
         owner=current_user,
     )
 
+    # When seller uploads first document
     if trade.status == TradeStatus.SELLER_CONFIRMED:
         crud.update_trade_status(
         session=session,
         trade=trade,
         actor=current_user,
         new_status=TradeStatus.DOCUMENTS_UPLOADED,
-        remarks="Documents uploaded by seller",
+        remarks="Seller uploaded initial trade documents",
     )
-    elif trade.status == TradeStatus.DOCUMENTS_UPLOADED:
-        pass  # allow multiple document uploads without re-logging status
+    elif trade.status == TradeStatus.BANK_ASSIGNED and doc_type in {
+            DocumentType.BILL_OF_LADING,
+            DocumentType.INSURANCE,
+    }:
+        crud.update_trade_status(
+        session=session,
+        trade=trade,
+        actor=current_user,
+        new_status=TradeStatus.SHIPPED,
+        remarks="Goods shipped and shipping documents uploaded",
+        )
     else:
         crud.create_ledger_entry(
         session=session,
@@ -87,7 +97,8 @@ def upload_document(
         actor=current_user,
         event_type="UPLOADED",
         description="Document uploaded",
-    )
+        )
+
 
     return {
         "message": "Document uploaded successfully",
@@ -105,7 +116,7 @@ def list_documents(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if current_user.role == Role.auditor.value:
+    if current_user.role in {Role.admin.value, Role.auditor.value}:
         return crud.list_all_documents(session)
 
     if current_user.role in {Role.bank.value, Role.corporate.value}:
@@ -127,8 +138,11 @@ def view_document(
     if not doc:
         raise HTTPException(404, "Document not found")
 
-    if current_user.role != Role.auditor.value and doc.org_name != current_user.org_name:
+    if (
+    current_user.role not in {Role.admin.value, Role.auditor.value}
+    and doc.org_name != current_user.org_name):
         raise HTTPException(403, "Access denied")
+
 
     # Ledger entry: ACCESSED
     crud.create_ledger_entry(
@@ -151,12 +165,13 @@ def get_document_by_hash(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if current_user.role == Role.auditor.value:
+    if current_user.role in {Role.admin.value, Role.auditor.value}:
         doc = crud.get_document_by_hash(session, hash_code)
     else:
         doc = crud.get_document_by_hash_and_org(
-            session, hash_code, current_user.org_name
+        session, hash_code, current_user.org_name
         )
+
 
     if not doc:
         raise HTTPException(404, "Document not found")

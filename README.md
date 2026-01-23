@@ -2,126 +2,193 @@
 
 ## 📌 Project Overview
 
-The **Trade Finance Blockchain Explorer** is a full-stack web application designed to digitally manage and track **trade finance documents** such as **Letters of Credit, Invoices, Bills of Lading, and Purchase Orders** in a **secure, transparent, and auditable** manner.
+The **Trade Finance Blockchain Explorer** is a full-stack web application that digitally manages and tracks **end-to-end trade finance workflows** in a secure, transparent, and auditable manner.
 
-The system ensures **document integrity** using cryptographic hash values and maintains an **immutable audit trail (ledger)** of all important actions like upload, access, verification, modification, and integrity validation.
+It simulates how real-world trade finance systems work between:
 
-This project is developed as part of the **Infosys Springboard Virtual Internship 6.0**.
+- **Buyers**
+- **Sellers**
+- **Banks**
+- **Regulators (Admin & Auditor)**
+
+The platform ensures:
+
+- Secure trade creation and lifecycle tracking
+- Document integrity using cryptographic hashes (SHA-256)
+- Role-based business rule enforcement
+- Immutable audit ledger for compliance
+- Automated background verification using Celery
+- Risk scoring and analytics dashboards
+
+This project is developed as part of the
+**Infosys Springboard Virtual Internship 6.0**.
 
 ---
 
 ## 🎯 Project Objectives
 
-- Digitize trade finance document management
-- Ensure document integrity using SHA-256 hash values
-- Detect document tampering using runtime hash comparison
-- Implement secure authentication and authorization
-- Enforce role-based and organisation-based access
-- Maintain an immutable audit trail for compliance
-- Provide an Integrity Dashboard for Admin & Auditor
+- Digitize trade finance workflows
+- Track full trade lifecycle digitally
+- Ensure document integrity using cryptographic hashing
+- Detect document tampering at runtime
+- Enforce role-based access and business rules
+- Maintain an immutable audit trail
+- Automate heavy tasks using background workers
+- Provide dashboards for risk, integrity, and analytics
 
 ---
 
-## ✨ Key Features
+## ✨ Core Modules
 
 ### 🔐 Authentication & Authorization
 
 - JWT-based authentication
 - Role-based access control:
+  - **Admin**
+  - **Auditor**
+  - **Bank**
+  - **Corporate** (Buyer / Seller)
 
-  - Admin
-  - Auditor
-  - Bank
-  - Corporate
+Each API is protected by role and ownership rules.
+
+---
+
+### 🔄 Trade Lifecycle Management
+
+Trades follow a real-world business flow:
+
+```
+INITIATED
+   ↓
+SELLER_CONFIRMED
+   ↓
+DOCUMENTS_UPLOADED
+   ↓
+BANK_ASSIGNED
+   ↓
+SHIPPED
+   ↓
+BANK_REVIEWING
+   ↓
+BANK_APPROVED
+   ↓
+PAYMENT_RELEASED
+   ↓
+COMPLETED
+```
+
+- Buyers create trades
+- Sellers confirm and upload documents
+- Buyers assign banks
+- Sellers mark shipment
+- Banks review & approve
+- Payment is released and trade completes
+
+Each transition is:
+
+- Role-restricted
+- Validated against allowed flow
+- Logged in the ledger
 
 ---
 
 ### 📄 Document Management
 
-- Upload and update trade finance documents
+- Upload trade documents (Invoice, Shipping, LC, etc.)
 - Automatic SHA-256 hash generation
-- Organisation-specific document visibility
+- Trade-linked storage
+- Organisation-based access control
 - Secure file storage
 
 ---
 
 ### 🧾 Ledger / Audit Trail
 
-- Immutable log of all document events:
+Every important action is logged:
 
-  - `UPLOADED`
-  - `ACCESSED`
-  - `VERIFIED`
-  - `MODIFIED`
-  - `INTEGRITY_FAILED`
+- `TRADE_CREATED`
+- `SELLER_CONFIRMED`
+- `DOCUMENT_UPLOADED`
+- `BANK_ASSIGNED`
+- `SHIPPED`
+- `BANK_APPROVED`
+- `PAYMENT_RELEASED`
+- `COMPLETED`
+- `INTEGRITY_FAILED`
 
-- Ledger acts as a **legal audit trail**
-- Viewable by Admin and Auditor
-
----
-
-### 🔍 Integrity Check System (Admin & Auditor)
-
-The Integrity module verifies that documents have **not been tampered with** after upload.
-
-**Capabilities:**
-
-- Run integrity checks on:
-
-  - All documents
-  - Specific document IDs
-
-- Runtime hash recomputation
-- Compare:
-
-  - Stored hash (original)
-  - Computed hash (current)
-
-- Status results:
-
-  - `PASSED` – File unchanged
-  - `FAILED` – Hash mismatch / File missing
-  - `PENDING` – File inaccessible or unreadable
-
-**Integrity Dashboard Displays:**
-
-- Total checks
-- Passed / Failed / Pending counts
-- Filter tabs: All / Passed / Failed / Pending
-- Detailed table:
-
-  - Document ID
-  - Check Type
-  - Stored Hash
-  - Computed Hash
-  - Status
-  - Timestamp
+The ledger acts as a **legal-grade immutable audit trail**
+Visible to Admin & Auditor.
 
 ---
 
-### 🚨 Alert System (Admin & Auditor)
+### 🔍 Integrity Check System
 
-- Failed integrity checks generate **alerts**
-- Alerts include:
+Admin and Auditor can run integrity checks on:
 
-  - Document ID
-  - Failure reason (Missing file / Hash mismatch)
+- All documents
+- Specific document IDs
 
+The system:
+
+1. Recomputes file hash at runtime
+2. Compares with stored hash
+3. Assigns status:
+
+| Status  | Meaning                         |
+| ------- | ------------------------------- |
+| PASSED  | File unchanged                  |
+| FAILED  | Hash mismatch / File missing    |
+| PENDING | File inaccessible or unreadable |
+
+- Failed checks generate:
+  - Integrity Alerts
+  - Ledger entries (`INTEGRITY_FAILED`)
+
+---
+
+### 🚨 Alert System
+
+- Alerts are raised when integrity fails
 - Admin/Auditor can:
-
   - View active alerts
   - Acknowledge alerts
 
-- Acknowledgement means:
+Acknowledgement means:
 
-  > “This issue has been noticed and will be investigated.”
+> “This issue has been noticed and will be investigated.”
 
 ---
 
-### 👥 User Management
+### 📊 Risk & Analytics
 
-- Admin can view all users
-- Role and organisation assigned to each user
+- Risk score computed per trade
+- Risk recomputation API
+- Analytics endpoints for:
+  - Trade volume
+  - Status distribution
+  - Risk distribution
+  - Compliance metrics
+
+Enables dashboards for:
+
+- Banks
+- Regulators
+- Auditors
+
+---
+
+### ⚙️ Background Automation
+
+Heavy operations like integrity checks run asynchronously using:
+
+- **Celery** – Task queue
+- **Redis** – Message broker
+
+This ensures:
+
+- API remains responsive
+- Long tasks run in background
+- Enterprise-grade backend behavior
 
 ---
 
@@ -141,67 +208,35 @@ The Integrity module verifies that documents have **not been tampered with** aft
 - SQLModel
 - PostgreSQL
 - JWT Authentication
-- Passlib (Password Hashing)
+- Celery + Redis
+- Passlib
 
 ---
 
-## 🔑 User Roles & Access Control
+## 🔑 User Roles
 
-| Role          | Permissions                                                  |
-| ------------- | ------------------------------------------------------------ |
-| **Admin**     | Manage users, run integrity checks, view alerts & ledger     |
-| **Auditor**   | Read-only access, run integrity checks, view ledger & alerts |
-| **Bank**      | View documents of own organisation                           |
-| **Corporate** | Upload and update documents of own organisation              |
-
----
-
-## 📁 Project Structure
-
-```
-project-root/
-├── backend/
-│   ├── app/
-│   │   ├── auth.py
-│   │   ├── crud.py
-│   │   ├── models.py
-│   │   ├── schemas.py
-│   │   ├── routers/
-│   │   │   ├── documents.py
-│   │   │   ├── ledger.py
-│   │   │   ├── integrity.py
-│   │   │   └── users.py
-│   │   └── main.py
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   ├── auth/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   └── package.json
-│
-└── README.md
-```
+| Role      | Capabilities                                                |
+| --------- | ----------------------------------------------------------- |
+| Admin     | Manage users, run integrity, view alerts, ledger, analytics |
+| Auditor   | Read-only, run integrity, view ledger & alerts              |
+| Bank      | Review trades, approve, update banking stages               |
+| Corporate | Create trades, upload documents, manage trade lifecycle     |
 
 ---
 
-## 🚀 How to Run the Project
+## 🚀 How to Run
 
-### 🔹 Backend Setup
+### Backend
 
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate     # Windows
+venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Backend runs at:
+Backend:
 
 ```
 http://127.0.0.1:8000
@@ -215,7 +250,7 @@ http://127.0.0.1:8000/docs
 
 ---
 
-### 🔹 Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
@@ -223,7 +258,7 @@ npm install
 npm run dev
 ```
 
-Frontend runs at:
+Frontend:
 
 ```
 http://localhost:5173
@@ -231,46 +266,22 @@ http://localhost:5173
 
 ---
 
-## 🔐 Environment Variables
-
-### Frontend (`.env`)
-
-```env
-VITE_API_URL=http://127.0.0.1:8000
-```
-
----
-
-## 👥 Project Team
-
-This project was developed as a **group project** under the
-**Infosys Springboard Virtual Internship 6.0**.
-
-- **Group Name:** Group C
-- **Team Size:** 6 Members
-
-### Team Members
-
-- Bhavana Uddanti
-- Kashish Badkhal
-- Vinay Jalla
-- Kanishka P
-- Harish Karthik
-- Jaya
-
-**Domain:** Full-Stack Web Development
-
----
-
 ## 🏁 Conclusion
 
-The **Trade Finance Blockchain Explorer** is not just a document management system—it is a **compliance-grade integrity platform**. By combining:
+The **Trade Finance Blockchain Explorer** is a
+**compliance-grade digital trade platform**.
+
+By combining:
 
 - Cryptographic hashing
-- Runtime integrity verification
-- Alerts & acknowledgement flow
-- Immutable ledger
+- Role-driven trade workflows
+- Immutable audit ledger
+- Integrity & alerting system
+- Risk analysis
+- Background automation
 
-it demonstrates how blockchain-inspired principles can be applied to real-world trade finance to ensure **trust, transparency, and fraud detection**.
+…it demonstrates how **blockchain-inspired trust models** can be applied to real-world trade finance systems, ensuring:
+
+> **Trust, Transparency, and Tamper Detection** in every transaction.
 
 ---

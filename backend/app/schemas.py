@@ -108,7 +108,7 @@ class UserMini(BaseModel):
 
 class TradeStatusHistory(BaseModel):
     id: int
-    status: str
+    status: TradeStatus
     changed_by_id: int
     remarks: Optional[str] = None
     created_at: datetime
@@ -124,7 +124,6 @@ class TradeCreate(BaseModel):
 class TradeRead(BaseModel):
     id: int
     trade_number: str
-
     buyer_id: int
     seller_id: int
     bank_id: Optional[int] = None
@@ -146,7 +145,7 @@ class TradeRead(BaseModel):
 
 
 class TradeStatusUpdate(BaseModel):
-    status: str
+    status: TradeStatus
     remarks: Optional[str] = None
 
 

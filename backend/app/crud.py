@@ -116,10 +116,11 @@ def create_ledger_entry(
     hash_before: Optional[str] = None,
     hash_after: Optional[str] = None,
 ):
+    doc = session.get(Document, document_id)
     ledger = Ledger(
         document_id=document_id,
         actor_id=actor.id,
-        org_name=actor.org_name,
+        org_name=actor.org_name or (doc.org_name if doc else None),
         event_type=event_type,
         description=description,
         hash_before=hash_before,
@@ -145,17 +146,29 @@ def list_all_ledger_entries(session: Session):
 
 # ================= TRADES =================
 
+def _resolve_trade_org(trade: Trade, actor: User) -> str:
+    """
+    Ledger must always have an org_name.
+    Prefer trade's org context; fallback to actor.
+    """
+    return (
+        actor.org_name
+        or getattr(trade, "org_name", None)
+        or "SYSTEM"
+    )
+
+
 def log_trade_event(
     session: Session,
     trade: Trade,
     actor: User,
-    status: str,
+    status: TradeStatus,
     remarks: str,
 ):
     ledger = Ledger(
         document_id=trade.id,   # trade_id reused as document_id
         actor_id=actor.id,
-        org_name=actor.org_name,
+        org_name=_resolve_trade_org(trade, actor),
         event_type=status,
         description=remarks,
     )
@@ -203,11 +216,12 @@ def update_trade_status(
     session: Session,
     trade: Trade,
     actor: User,
-    new_status: str,
+    new_status: TradeStatus,
     remarks: str,
 ):
     trade.status = new_status
-    trade.updated_at = datetime.utcnow() 
+    trade.updated_at = datetime.utcnow()
+
     if new_status == TradeStatus.COMPLETED:
         trade.completed_at = datetime.utcnow()
 
@@ -246,7 +260,6 @@ def assign_bank_to_trade(
     session.commit()
     session.refresh(trade)
     return trade
-
 
 # ================= TRADE READ HELPERS =================
 

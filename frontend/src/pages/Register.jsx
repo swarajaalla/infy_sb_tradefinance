@@ -89,7 +89,6 @@ const Register = () => {
             <option value="bank">Bank</option>
             <option value="corporate">Corporate</option>
             <option value="auditor">Auditor</option>
-            <option value="admin">Admin</option>
           </select>
 
           <input

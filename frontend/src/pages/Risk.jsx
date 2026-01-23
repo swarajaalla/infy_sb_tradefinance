@@ -9,7 +9,7 @@ const Risk = () => {
   const toast = useToast();
 
   const role = user?.role?.toLowerCase();
-  const isPrivileged = role === "admin" || role === "auditor";
+  const isPrivileged = ["admin", "auditor"].includes(role);
 
   const [myRisk, setMyRisk] = useState(null);
   const [allRisks, setAllRisks] = useState([]);
@@ -30,9 +30,22 @@ const Risk = () => {
 
       const results = await Promise.all(requests);
 
-      setMyRisk(results[0].data);
+      const my = results[0].data;
+      setMyRisk(my);
+
       if (isPrivileged) {
         setAllRisks(results[1].data);
+      } else {
+        // For corporate/bank: show a single-row table for themselves
+        setAllRisks([
+          {
+            user_id: my.user_id,
+            name: user.name,
+            role: role,
+            final_score: my.final_score,
+            level: my.level,
+          },
+        ]);
       }
     } catch {
       toast.error("Failed to load risk data");

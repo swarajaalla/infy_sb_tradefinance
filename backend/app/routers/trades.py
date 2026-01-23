@@ -19,11 +19,13 @@ TRADE_STATUS_EVENTS = {
     TradeStatus.SELLER_CONFIRMED,
     TradeStatus.DOCUMENTS_UPLOADED,
     TradeStatus.BANK_ASSIGNED,
+    TradeStatus.SHIPPED,
     TradeStatus.BANK_REVIEWING,
     TradeStatus.BANK_APPROVED,
     TradeStatus.PAYMENT_RELEASED,
     TradeStatus.COMPLETED,
     TradeStatus.CANCELLED,
+    TradeStatus.DISPUTED,
 }
 
 # ============================================================
@@ -220,12 +222,55 @@ def update_trade_status(
     if not trade:
         raise HTTPException(404, "Trade not found")
 
+    # Admin and Auditor are read-only in business flow
+    if current_user.role in {Role.admin.value, Role.auditor.value}:
+        raise HTTPException(403, "You are not allowed to change trade status")
+
+    # Corporate can change status only if buyer or seller of this trade
+    if current_user.role == Role.corporate.value:
+        if current_user.id not in {trade.buyer_id, trade.seller_id}:
+            raise HTTPException(403, "You are not part of this trade")
+
+    # Bank can change status only if assigned to this trade
+    if current_user.role == Role.bank.value:
+        if current_user.id != trade.bank_id:
+            raise HTTPException(403, "You are not assigned to this trade")
+
+    ALLOWED_TRANSITIONS = {
+        TradeStatus.INITIATED: {TradeStatus.SELLER_CONFIRMED, TradeStatus.CANCELLED},
+        TradeStatus.SELLER_CONFIRMED: {TradeStatus.DOCUMENTS_UPLOADED, TradeStatus.CANCELLED},
+        TradeStatus.DOCUMENTS_UPLOADED: {TradeStatus.BANK_ASSIGNED, TradeStatus.CANCELLED},
+        TradeStatus.BANK_ASSIGNED: {TradeStatus.SHIPPED},
+        TradeStatus.SHIPPED: {TradeStatus.BANK_REVIEWING, TradeStatus.DISPUTED},
+        TradeStatus.BANK_REVIEWING: {TradeStatus.BANK_APPROVED, TradeStatus.DISPUTED},
+        TradeStatus.BANK_APPROVED: {TradeStatus.PAYMENT_RELEASED},
+        TradeStatus.PAYMENT_RELEASED: {TradeStatus.COMPLETED},
+        TradeStatus.DISPUTED: {TradeStatus.CANCELLED},
+    }
+
+    current = trade.status
+    target = data.status
+    if target == TradeStatus.SELLER_CONFIRMED and current_user.id != trade.seller_id:
+        raise HTTPException(403, "Only seller can confirm trade")
+    if target == TradeStatus.DOCUMENTS_UPLOADED and current_user.id != trade.seller_id:
+        raise HTTPException(403, "Only seller uploads documents")
+    if target == TradeStatus.BANK_ASSIGNED and current_user.id != trade.buyer_id:
+        raise HTTPException(403, "Only buyer assigns bank")
+    if target == TradeStatus.SHIPPED and current_user.id != trade.seller_id:
+        raise HTTPException(403, "Only seller can mark shipped")
+    if target in {TradeStatus.BANK_REVIEWING, TradeStatus.BANK_APPROVED, TradeStatus.PAYMENT_RELEASED}:
+        if current_user.role != Role.bank.value:
+            raise HTTPException(403, "Only bank can perform this action")
+    allowed = ALLOWED_TRANSITIONS.get(current, set())
+    if target not in allowed:
+        raise HTTPException(400, f"Invalid transition from {current} to {target}")
+
     updated_trade = crud.update_trade_status(
         session=session,
         trade=trade,
         actor=current_user,
-        new_status=data.status,
-        remarks=data.remarks or data.status,
+        new_status=target,
+        remarks=data.remarks or target,
     )
 
     return {
@@ -233,7 +278,6 @@ def update_trade_status(
         "trade_id": updated_trade.id,
         "new_status": updated_trade.status,
     }
-
 
 # ============================================================
 # ASSIGN BANK (BUYER ONLY)

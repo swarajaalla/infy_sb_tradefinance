@@ -55,19 +55,36 @@ const Documents = () => {
   }, [editId, toast]);
 
   const handleUpload = async (e) => {
-    e.preventDefault();
-    const fd = new FormData();
-    fd.append("trade_id", tradeId);
-    Object.entries(uploadForm).forEach(([k, v]) => fd.append(k, v));
+  e.preventDefault();
 
-    try {
-      await api.post("/documents/upload", fd);
-      toast.success("Document uploaded successfully");
-      setMode("menu");
-    } catch {
-      toast.error("Document upload failed");
-    }
-  };
+  if (!tradeId) {
+    toast.error("No trade selected for this document");
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append("trade_id", tradeId);
+  Object.entries(uploadForm).forEach(([k, v]) => fd.append(k, v));
+
+  try {
+    // 1. Upload document
+    await api.post("/documents/upload", fd);
+
+    // 2. Mark trade as DOCUMENTS_UPLOADED
+    await api.patch(`/trades/${tradeId}/status`, {
+      status: "DOCUMENTS_UPLOADED",
+      remarks: "Documents uploaded by seller",
+    });
+
+    toast.success("Documents uploaded and trade updated");
+
+    // 3. Redirect back to trades
+    navigate("/trades");
+  } catch (err) {
+    toast.error(err.response?.data?.detail || "Document upload failed");
+  }
+};
+
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -171,6 +188,7 @@ const Documents = () => {
             required
           >
             <option value="">Type</option>
+            <option value="PO">Purchase Order</option>
             <option value="INVOICE">Invoice</option>
             <option value="BL">Bill of Lading</option>
             <option value="LOC">Letter of Credit</option>

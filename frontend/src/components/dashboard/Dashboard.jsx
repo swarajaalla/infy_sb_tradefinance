@@ -28,43 +28,50 @@ const Dashboard = () => {
     loadDashboard();
   }, []);
 
-  const loadDashboard = async () => {
-    try {
-      setLoading(true);
+ const loadDashboard = async () => {
+  try {
+    setLoading(true);
 
-      const results = await Promise.allSettled([
-        api.get("/trades/"),
-        api.get("/documents/list"),
-        api.get("/ledger/entries"),
-        api.get("/risk/dashboard/summary"),
-      ]);
+    const results = await Promise.allSettled([
+      api.get("/trades/"),
+      api.get("/documents/list"),
+      api.get("/ledger/entries"),
+      api.get("/analytics/summary"), // ✅ correct endpoint
+    ]);
 
-      const trades =
-        results[0].status === "fulfilled" ? results[0].value.data : [];
-      const documents =
-        results[1].status === "fulfilled" ? results[1].value.data : [];
-      const ledger =
-        results[2].status === "fulfilled" ? results[2].value.data : [];
-      const risk =
-        results[3].status === "fulfilled" ? results[3].value.data : null;
+    const trades =
+      results[0].status === "fulfilled" ? results[0].value.data : [];
+    const documents =
+      results[1].status === "fulfilled" ? results[1].value.data : [];
+    const ledger =
+      results[2].status === "fulfilled" ? results[2].value.data : [];
+    const analytics =
+      results[3].status === "fulfilled" ? results[3].value.data : null;
 
-      setStats({
-        totalTrades: trades.length,
-        documentsUploaded: documents.length,
-        ledgerEvents: ledger.length,
-        pendingActions: trades.filter(
-          (t) => !["COMPLETED", "CANCELLED"].includes(t.status)
-        ).length,
+    setStats({
+      totalTrades: trades.length,
+      documentsUploaded: documents.length,
+      ledgerEvents: ledger.length,
+      pendingActions: trades.filter(
+        (t) => !["COMPLETED", "CANCELLED"].includes(t.status)
+      ).length,
+    });
+
+    setRecentTrades(trades.slice(0, 5));
+
+    if (analytics) {
+      setRiskSummary({
+        average_risk: analytics.risk.average,
+        cancelled_trades: analytics.trades.cancelled,
+        total_users: analytics.users.total,
       });
-
-      setRecentTrades(trades.slice(0, 5));
-      setRiskSummary(risk);
-    } catch {
-      toast.error("Failed to load dashboard data");
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch {
+    toast.error("Failed to load dashboard data");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (loading) {
     return <p className="text-slate-600">Loading dashboard...</p>;

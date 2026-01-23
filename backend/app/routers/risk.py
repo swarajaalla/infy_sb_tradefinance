@@ -154,8 +154,8 @@ def recompute(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_session),
 ):
-    if current_user.role not in ("admin", "auditor"):
-        raise HTTPException(status_code=403, detail="Not permitted")
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can recompute risk")
 
     user = db.get(models.User, user_id)
     if not user:
@@ -169,12 +169,18 @@ def recompute(
     }
 
 
-@router.get("/export/pdf")
-def export_risk_pdf(
+@router.get("/export/pdf/{user_id}")
+def export_user_risk_pdf(
+    user_id: int,
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_session),
 ):
-    data = calculate_risk(current_user.id, db)
+    if current_user.role not in ("admin", "auditor")and current_user.id != user_id:
+        raise HTTPException(403, "Not permitted")
+
+    data = calculate_risk(user_id, db)
+    # generate PDF using that user's data
+
     styles = getSampleStyleSheet()
     path = "risk_report.pdf"
 
